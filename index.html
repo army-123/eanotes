@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>EA Notes Cloud</title>
 
 <!-- Supabase -->
@@ -10,108 +10,51 @@
 
 <style>
 :root{
-  --bg:#0f1724; --card:#0b1220; --text:#e6eefc; --muted:#9aa8c7; --accent:#3b82f6;
+  --bg:#0f1724; --card:#0b1220; --text:#e6eefc; --muted:#9aa8c7; --accent:#3b82f6; --danger:#dc2626; --teacher:#22c55e; --student:#3b82f6;
 }
 body.light{
   --bg:#f6f8ff; --card:#ffffff; --text:#0b1220; --muted:#6b7280; --accent:#2563eb;
 }
+*{box-sizing:border-box}
+body{ margin:0; background:var(--bg); color:var(--text); font-family:Inter,system-ui,Arial; padding:20px; min-height:100vh; display:flex; align-items:center; justify-content:center; }
+.container{ width:980px; max-width:100%; background:var(--card); border-radius:12px; padding:18px; box-shadow:0 10px 30px rgba(0,0,0,0.45); }
+.header{ display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px; }
+h1{ margin:0; }
+.muted{ color:var(--muted); font-size:13px; }
 
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family:Inter, Arial;
-  padding:20px;
+.row{ display:flex; gap:10px; align-items:center; }
+.section{ background:rgba(255,255,255,0.03); padding:14px; border-radius:10px; margin-top:12px; }
+
+label{ display:block; margin-top:8px; font-size:13px; color:var(--muted); }
+input, select { width:100%; padding:10px; margin-top:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.06); background:transparent; color:var(--text); }
+button{ padding:10px 12px; border-radius:8px; border:0; cursor:pointer; font-weight:600; }
+.btn-primary{ background:var(--accent); color:white; }
+.btn-ghost{ background:transparent; border:1px solid var(--accent); color:var(--accent); }
+.btn-danger{ background:var(--danger); color:white; }
+
+.login-top{ display:flex; justify-content:space-between; align-items:center; }
+.role-labels{ display:flex; gap:8px; align-items:center; margin-left:8px; }
+
+.small-badge{ font-size:13px; padding:6px 8px; border-radius:8px; color:white; font-weight:700; }
+
+.student-badge{ background:var(--student); }
+.teacher-badge{ background:var(--teacher); }
+
+/* loading overlay */
+#loadingOverlay{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:9999; align-items:center; justify-content:center; }
+.spinner{ width:56px; height:56px; border:6px solid rgba(255,255,255,0.15); border-top-color:white; border-radius:50%; animation:spin .8s linear infinite; }
+@keyframes spin{ to { transform:rotate(360deg); } }
+
+/* upload / file list */
+.fileRow{ display:flex; justify-content:space-between; gap:12px; padding:10px; border-radius:8px; background:rgba(255,255,255,0.02); margin-top:10px; align-items:center; }
+.pdf-overlay{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.86); z-index:9998; align-items:center; justify-content:center; }
+.pdf-box{ width:92%; height:92%; background:white; border-radius:10px; display:flex; flex-direction:column; overflow:hidden; }
+.pdf-frame{ flex:1; border:0; }
+
+/* small screens */
+@media (max-width:880px){
+  .container{ padding:12px; }
 }
-
-.container{
-  max-width:950px;
-  margin:auto;
-  background:var(--card);
-  padding:20px;
-  border-radius:12px;
-  box-shadow:0 8px 25px rgba(0,0,0,0.3);
-}
-
-h1{ margin:0 0 6px 0; }
-.muted{ color:var(--muted); }
-
-input,select{
-  width:100%;
-  padding:10px;
-  margin-top:8px;
-  background:#ffffff10;
-  color:var(--text);
-  border:1px solid #233142;
-  border-radius:10px;
-}
-
-button{
-  padding:10px 12px;
-  border-radius:10px;
-  border:0;
-  cursor:pointer;
-  font-weight:600;
-}
-
-.primary{ background:var(--accent); color:white; }
-.ghost{ background:transparent; border:1px solid var(--accent); color:var(--accent); }
-.danger{ background:#dc2626; color:white; }
-
-.row{ display:flex; gap:10px; align-items:center; margin-top:12px; }
-
-.section{
-  margin-top:20px;
-  padding:15px;
-  background:#ffffff10;
-  border-radius:10px;
-}
-
-.fileRow{
-  display:flex;
-  justify-content:space-between;
-  background:#ffffff15;
-  padding:10px;
-  border-radius:10px;
-  margin-top:10px;
-}
-
-#loadingOverlay{
-  display:none;
-  position:fixed; inset:0;
-  background:rgba(0,0,0,0.5);
-  z-index:9999;
-  align-items:center;
-  justify-content:center;
-}
-
-.spinner{
-  width:60px;height:60px;
-  border:6px solid #ffffff30;
-  border-top-color:white;
-  border-radius:50%;
-  animation:spin .8s linear infinite;
-}
-@keyframes spin{ to{ transform:rotate(360deg); } }
-
-#pdfOverlay{
-  display:none;
-  position:fixed;
-  inset:0;
-  z-index:9998;
-  background:rgba(0,0,0,0.85);
-  align-items:center;
-  justify-content:center;
-}
-#pdfBox{
-  background:white;
-  width:90%; height:90%;
-  display:flex;
-  flex-direction:column;
-  border-radius:12px;
-}
-#pdfFrame{ flex:1; border:0; }
-
 </style>
 </head>
 <body>
@@ -120,87 +63,100 @@ button{
 
 <div class="container">
 
-  <div style="display:flex;justify-content:space-between;align-items:center;">
+  <div class="header">
     <div>
       <h1>EA Notes Cloud</h1>
-      <div class="muted">Upload and access notes easily</div>
+      <div class="muted">Upload, view and manage notes — single page</div>
     </div>
-    <button id="themeToggle" class="ghost">🌙</button>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <button id="themeToggle" class="btn-ghost">🌙</button>
+      <div id="userRole" class="muted">Not logged in</div>
+    </div>
   </div>
 
-  <!-- LOGIN SECTION -->
-  <div class="section">
-    <h3>Login</h3>
+  <!-- LOGIN + SEARCH (search moved inside login area) -->
+  <div class="section" id="loginSection">
+    <div class="login-top">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div>
+          <label style="margin-bottom:6px"><strong>Login</strong></label>
+          <div class="muted" style="margin-top:-4px">Teacher: Supabase email. Student: name + common password</div>
+        </div>
+
+        <div class="role-labels" aria-hidden="true">
+          <div class="small-badge student-badge">Student</div>
+          <div class="small-badge teacher-badge">Teacher</div>
+        </div>
+      </div>
+
+      <div style="min-width:220px">
+        <!-- optional quick tips -->
+      </div>
+    </div>
 
     <label>Role</label>
-    <select id="roleSelect">
+    <select id="roleSelect" autocomplete="off" aria-label="role">
       <option value="student">Student</option>
       <option value="teacher">Teacher</option>
     </select>
 
-    <label id="labelUser">Student Name</label>
-    <input id="username" placeholder="Student name or teacher email">
+    <label id="labelUser">Student name</label>
+    <!-- discourage browser password manager: set autocomplete attributes and random names for inputs -->
+    <input id="username" name="eanotes_username" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Student name or teacher email">
 
     <label>Password</label>
-    <input type="password" id="password" placeholder="Students use @armyamanu">
+    <input id="password" name="eanotes_password" type="password" autocomplete="new-password" placeholder="Students use @armyamanu">
 
-    <div class="row">
-      <button id="loginBtn" class="primary" style="flex:1">Login</button>
-      <button id="quickBtn" class="ghost">Quick</button>
+    <div class="row" style="margin-top:12px">
+      <button id="loginBtn" type="button" class="btn-primary" style="flex:1">Login</button>
+      <button id="quickBtn" type="button" class="btn-ghost">Quick</button>
     </div>
 
-    <div id="loginMsg" class="muted" style="margin-top:6px;"></div>
+    <div class="row" style="margin-top:12px; align-items:center;">
+      <label style="margin:0;min-width:90px">Search files</label>
+      <input id="searchInput" placeholder="Search by file name..." autocomplete="off" style="flex:1">
+    </div>
 
-    <button id="logoutBtn" class="danger" style="margin-top:10px;display:none;">Logout</button>
+    <div id="loginMsg" class="muted" style="margin-top:10px; min-height:18px;"></div>
+
+    <button id="logoutBtn" class="btn-danger" style="margin-top:12px; display:none;">Logout</button>
   </div>
 
-  <!-- UPLOAD SECTION -->
+  <!-- UPLOAD (teacher only) -->
   <div class="section" id="uploadSection" style="display:none;">
-    <h3>Upload PDF</h3>
-
     <label>Subject</label>
     <select id="subjectSelect">
-      <option>Anatomy</option>
-      <option>History</option>
-      <option>Geography</option>
-      <option>Psychology</option>
-      <option>Mathematics</option>
+      <option>Anatomy</option><option>History</option><option>Geography</option><option>Psychology</option><option>Mathematics</option>
     </select>
 
     <div class="row">
-      <label for="fileInput" class="ghost" style="cursor:pointer;">Choose File</label>
+      <label for="fileInput" id="chooseLabel" class="btn-ghost" style="cursor:pointer;">Choose PDF</label>
       <input id="fileInput" type="file" accept="application/pdf" style="display:none;">
-      <button id="uploadBtn" class="primary">Upload</button>
+      <button id="uploadBtn" class="btn-primary">Upload</button>
     </div>
 
-    <div id="uploadProgress" style="display:none;margin-top:10px;">
-      <div class="muted">Uploading... <span id="uploadPercent">0%</span></div>
-    </div>
+    <div id="uploadInfo" class="muted" style="margin-top:10px; display:none;">Uploading... <span id="uploadPercent">0%</span></div>
   </div>
 
   <!-- FILE LIST -->
-  <div class="section">
-    <h3>Files</h3>
-
-    <input id="searchInput" placeholder="Search name...">
-
-    <div id="fileList" style="margin-top:12px;"></div>
+  <div class="section" id="filesSection">
+    <h3 style="margin:0 0 8px 0">Files</h3>
+    <div id="fileList"></div>
   </div>
 
 </div>
 
-<!-- PDF VIEWER -->
-<div id="pdfOverlay">
-  <div id="pdfBox">
-    <div style="padding:10px;display:flex;justify-content:space-between;">
+<!-- PDF viewer -->
+<div class="pdf-overlay" id="pdfOverlay">
+  <div class="pdf-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #eee;">
       <div id="pdfTitle"></div>
-      <button id="closePdf" class="primary">Close</button>
+      <div><button id="closePdf" class="btn-primary">Close</button></div>
     </div>
-    <iframe id="pdfFrame"></iframe>
+    <iframe id="pdfFrame" class="pdf-frame"></iframe>
   </div>
 </div>
 
 <script src="script.js"></script>
-
 </body>
 </html>
