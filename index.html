@@ -140,23 +140,23 @@
 
     <div id="appCard" class="card" style="display:none">
       <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px">
-        <select id="folderSelect" onchange="loadFiles()">
-          <option>Anatomy</option>
-          <option>History</option>
-          <option>Inclusiveness</option>
-          <option>Civics</option>
-          <option>Global affairs</option>
-          <option>Geography</option>
-          <option>Psychology</option>
-        </select>
+  <select id="folderSelect" onchange="loadFiles()">
+    <option>Anatomy</option>
+    <option>History</option>
+    <option>Inclusiveness</option>
+    <option>Civics</option>
+    <option>Global affairs</option>
+    <option>Geography</option>
+    <option>Psychology</option>
+  </select>
 
-        <!-- Upload visible only for teacher -->
-        <div id="uploadSection" style="display:none;">
-          <div id="uploadSection" style="display:none;">
-  <label for="fileUpload" class="btn ghost" style="padding:8px 14px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
-    📤 <span>Upload</span>
-  </label>
-  <input id="fileUpload" type="file" style="display:none" />
+  <!-- CLEAN + FIXED UPLOAD BUTTON (TEACHER ONLY) -->
+  <div id="uploadSection" style="display:none;">
+    <label for="fileUpload" class="btn ghost" style="padding:8px 14px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
+      📤 <span>Upload</span>
+    </label>
+    <input id="fileUpload" type="file" style="display:none" />
+  </div>
 </div>
 " type="file" style="display:none" />
         </div>" type="file" style="display:none" />
