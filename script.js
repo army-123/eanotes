@@ -1,316 +1,370 @@
-// FINAL script.js — Full Supabase app (teacher + student)
-// Supabase project (you provided these values earlier)
+/* =========================
+   EA NOTES CLOUD - script.js
+   Single-page logic for index.html
+   Features:
+   - Login (password decides role)
+   - Dashboard (separate UI shown after login)
+   - Upload button triggers file picker
+   - Shows uploading row immediately and updates when done
+   - File listing, view, delete (teacher)
+   - Small UI animations and loading indicators
+   ========================= */
+
+/* ---------- Supabase config (use your project values) ---------- */
 const SUPABASE_URL = "https://hlstgluwamsuuqlctdzk.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhsc3RnbHV3YW1zdXVxbGN0ZHprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyNzMwMzQsImV4cCI6MjA3OTg0OTAzNH0.KUPx3pzrcd3H5aEx2B7mFosWNUVOEzXDD5gL-TmyawQ";
 
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-// UI elements
-const roleSelect = document.getElementById('roleSelect');
-const usernameEl = document.getElementById('username');
-const passwordEl = document.getElementById('password');
-const loginBtn = document.getElementById('loginBtn');
-const guestBtn = document.getElementById('guestBtn');
-const loginMsg = document.getElementById('loginMsg');
-const userRole = document.getElementById('userRole');
+/* ---------- DOM ---------- */
+const loginBox = document.getElementById('loginBox');
+const loginName = document.getElementById('loginName');
+const loginPassword = document.getElementById('loginPassword');
+const btnLogin = document.getElementById('btnLogin');
+const btnLoginText = document.getElementById('btnLoginText');
+const btnLoginSpinner = document.getElementById('btnLoginSpinner');
+const loginFeedback = document.getElementById('loginFeedback');
 
+const dashboard = document.getElementById('dashboard');
+const roleTag = document.getElementById('roleTag');
+const welcomeText = document.getElementById('welcomeText');
+const controlsRow = document.getElementById('controlsRow');
 const subjectSelect = document.getElementById('subjectSelect');
-const currentSubject = document.getElementById('currentSubject');
-const fileInput = document.getElementById('fileInput');
-const uploadLabel = document.getElementById('uploadLabel');
-const uploadProgress = document.getElementById('uploadProgress');
-const uploadBar = document.getElementById('uploadBar');
-const uploadPercent = document.getElementById('uploadPercent');
-const uploadStatus = document.getElementById('uploadStatus');
+const uploadBtn = document.getElementById('uploadBtn');
+const realFileInput = document.getElementById('realFileInput');
+const fileList = document.getElementById('fileList');
 const logoutBtn = document.getElementById('logoutBtn');
 
-const fileList = document.getElementById('fileList');
-const searchInput = document.getElementById('searchInput');
-const refreshBtn = document.getElementById('refreshBtn');
-
-const pdfOverlay = document.getElementById('pdfOverlay');
+const pdfModal = document.getElementById('pdfModal');
 const pdfFrame = document.getElementById('pdfFrame');
 const pdfTitle = document.getElementById('pdfTitle');
-const closePdfBtn = document.getElementById('closePdfBtn');
+const closePdf = document.getElementById('closePdf');
 
-const themeToggle = document.getElementById('themeToggle');
-const loadingOverlay = document.getElementById('loadingOverlay');
+const headerRight = document.getElementById('headerRight');
 
-// global user object
-let currentUser = null; // { role: 'student'|'teacher', name/email }
-
-// helpers
-function showLoading(){ loadingOverlay.style.display = 'flex'; }
-function hideLoading(){ loadingOverlay.style.display = 'none'; }
-function setLoginMessage(msg, isError = false){
-  loginMsg.textContent = msg || '';
-  loginMsg.style.color = isError ? '#dc2626' : '#6b7280';
+/* ---------- helper UI ---------- */
+function showLoginLoading(show){
+  btnLogin.disabled = show;
+  btnLoginSpinner.style.display = show ? 'inline-block' : 'none';
+  btnLoginText.textContent = show ? 'Logging in…' : 'Login';
+}
+function setFeedback(msg, isErr=false){
+  loginFeedback.textContent = msg || '';
+  loginFeedback.style.color = isErr ? 'var(--danger)' : 'var(--muted)';
+}
+function showDashboard(show){
+  if(show){
+    loginBox.style.display = 'none';
+    dashboard.style.display = 'block';
+    dashboard.setAttribute('aria-hidden','false');
+  } else {
+    loginBox.style.display = 'block';
+    dashboard.style.display = 'none';
+    dashboard.setAttribute('aria-hidden','true');
+  }
 }
 
-// theme
-themeToggle.onclick = () => {
-  document.body.classList.toggle('dark');
-};
-
-// role switch updates labels
-roleSelect.onchange = () => {
-  const role = roleSelect.value;
-  document.getElementById('labelUser').textContent = role === 'teacher' ? 'Teacher email' : 'Student name';
-  usernameEl.placeholder = role === 'teacher' ? 'teacher@example.com' : 'Student name';
-};
-
-// quick guest student
-guestBtn.onclick = () => {
-  const name = usernameEl.value.trim() || 'Student';
-  // student common password required to proceed
-  const pw = passwordEl.value;
-  if (pw !== '@armyamanu') {
-    setLoginMessage('Student common password is: @armyamanu', true);
-    return;
-  }
-  // set as student
-  currentUser = { role: 'student', name };
-  userRole.textContent = `student: ${name}`;
-  setLoginMessage('Logged in as student');
-  // UI changes
-  document.getElementById('uploadLabel').style.display = 'none';
-  loadFiles(subjectSelect.value);
-};
-
-// login handler (teacher via Supabase)
-loginBtn.onclick = async () => {
-  setLoginMessage('');
-  showLoading();
-
-  const role = roleSelect.value;
-  const identifier = usernameEl.value.trim();
-  const pw = passwordEl.value;
-
-  if (!identifier || !pw) {
-    setLoginMessage('Please fill both fields', true);
-    hideLoading();
-    return;
-  }
-
-  if (role === 'student') {
-    // student path: check common password
-    if (pw !== '@armyamanu') {
-      setLoginMessage('Wrong student password', true);
-      hideLoading();
-      return;
-    }
-    currentUser = { role: 'student', name: identifier };
-    userRole.textContent = `student: ${identifier}`;
-    document.getElementById('uploadLabel').style.display = 'none';
-    setLoginMessage('Logged in as student');
-    hideLoading();
-    loadFiles(subjectSelect.value);
-    return;
-  }
-
-  // teacher: Supabase Auth
-  try {
-    const res = await sb.auth.signInWithPassword({ email: identifier, password: pw });
-    if (res.error) throw res.error;
-    currentUser = { role: 'teacher', email: identifier };
-    userRole.textContent = `teacher: ${identifier}`;
-    document.getElementById('uploadLabel').style.display = 'inline-block';
-    setLoginMessage('Logged in as teacher');
-    loadFiles(subjectSelect.value);
-  } catch (err) {
-    setLoginMessage(err.message || 'Login failed', true);
-  } finally {
-    hideLoading();
-  }
-};
-
-// logout
-logoutBtn.onclick = async () => {
-  try { await sb.auth.signOut(); } catch(e){}
-  currentUser = null;
-  userRole.textContent = 'Not logged in';
-  setLoginMessage('Logged out');
-  // hide UI-sensitive elements
-  document.getElementById('uploadLabel').style.display = 'none';
-  fileList.innerHTML = '';
-};
-
-// keep session if teacher already logged in
-(async function init() {
-  try {
-    const s = await sb.auth.getSession();
-    if (s && s.data && s.data.session) {
-      currentUser = { role: 'teacher', email: s.data.session.user.email };
-      userRole.textContent = `teacher: ${currentUser.email}`;
-      document.getElementById('uploadLabel').style.display = 'inline-block';
-    } else {
-      document.getElementById('uploadLabel').style.display = 'none';
-    }
-  } catch (e) {
-    console.warn('session init err', e);
-  }
+/* ---------- theme (liquid accent already applied in CSS) ---------- */
+(function attachThemeToggle(){
+  // small convenience: click headerRight toggles theme (optional)
+  const themeButton = document.createElement('button');
+  themeButton.textContent = '🌙';
+  themeButton.className = 'btn btn-ghost';
+  themeButton.style.border = '1px solid rgba(255,255,255,0.06)';
+  themeButton.onclick = () => {
+    document.documentElement.classList.toggle('light');
+    themeButton.textContent = document.documentElement.classList.contains('light') ? '☀️' : '🌙';
+  };
+  headerRight.appendChild(themeButton);
 })();
 
-// file selection handling
-fileInput.onchange = (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  if (!currentUser) { alert('Please login first'); return; }
-  uploadFile(file, subjectSelect.value);
-};
+/* ---------- login logic: password decides role ---------- */
+async function loginHandler(){
+  setFeedback('');
+  const name = loginName.value.trim();
+  const pw = loginPassword.value;
 
-// upload function: uploads to Supabase storage then inserts DB row (table 'files')
-// stores: name, subject, url, path, created_at (Supabase SQL should have these)
-async function uploadFile(file, subject) {
-  try {
-    showLoading();
-    uploadProgress.style.display = 'block';
-    uploadBar.style.width = '0%';
-    uploadPercent.textContent = '0%';
-    uploadStatus.textContent = '';
+  if(!name || !pw){
+    setFeedback('Enter both username and password', true);
+    return;
+  }
 
-    // safe file name and unique path
-    const ts = Date.now();
+  showLoginLoading(true);
+  // tiny delay so spinner visible
+  await new Promise(r=>setTimeout(r, 450));
+
+  // student
+  if(pw === '@armyamanu'){
+    saveUser({ role:'student', name });
+    finishLogin('student', name);
+    return;
+  }
+
+  // teacher (client-side password as requested)
+  if(pw === '@teacher123'){
+    // allow any string as teacher email/identifier
+    saveUser({ role:'teacher', name });
+    finishLogin('teacher', name);
+    return;
+  }
+
+  setFeedback('Incorrect password', true);
+  showLoginLoading(false);
+}
+
+/* finish login: show dashboard, set UI */
+function finishLogin(role, name){
+  roleTag.textContent = role === 'teacher' ? 'Teacher' : 'Student';
+  welcomeText.textContent = role === 'teacher' ? `Welcome, Teacher` : `Welcome, ${escapeHtml(name)}`;
+  setFeedback('');
+
+  // show/hide controls
+  if(role === 'teacher'){
+    controlsRow.classList.remove('hidden');
+    uploadBtn.style.display = 'inline-flex';
+  } else {
+    controlsRow.classList.add('hidden');
+  }
+
+  showDashboard(true);
+  showLoginLoading(false);
+  // store session
+  localStorage.setItem('eanotes_user', JSON.stringify({ role, name }));
+
+  // load files for selected subject
+  loadFiles();
+}
+
+/* attach login events */
+btnLogin.addEventListener('click', loginHandler);
+loginPassword.addEventListener('keyup', (e) => { if(e.key === 'Enter') loginHandler(); });
+
+/* if session exists — auto-enter */
+(function autoSession(){
+  const raw = localStorage.getItem('eanotes_user');
+  if(!raw) return;
+  try{
+    const user = JSON.parse(raw);
+    finishLogin(user.role, user.name);
+  }catch(e){}
+})();
+
+/* ---------- logout ---------- */
+logoutBtn.addEventListener('click', () => {
+  localStorage.removeItem('eanotes_user');
+  // reset UI
+  loginName.value = '';
+  loginPassword.value = '';
+  showDashboard(false);
+});
+
+/* ---------- upload logic ---------- */
+/* Upload button triggers hidden file input */
+uploadBtn.addEventListener('click', () => {
+  realFileInput.click();
+});
+
+/* When file chosen, show uploading row immediately and perform upload */
+realFileInput.addEventListener('change', async (ev) => {
+  const file = ev.target.files && ev.target.files[0];
+  if(!file) return;
+
+  // ensure teacher
+  const raw = localStorage.getItem('eanotes_user');
+  const user = raw ? JSON.parse(raw) : null;
+  if(!user || user.role !== 'teacher'){
+    alert('Only teachers can upload');
+    return;
+  }
+
+  const subject = subjectSelect.value || 'General';
+
+  // create an uploading row
+  const place = createUploadingRow(file.name, subject);
+
+  try{
+    // build path
     const safe = encodeURIComponent(file.name.replace(/\s+/g,'_'));
-    const path = `${subject}/${ts}_${safe}`;
+    const path = `${subject}/${Date.now()}_${safe}`;
 
-    // upload (upsert true allows overwrite)
-    const { data: uploadData, error: uploadErr } = await sb.storage
-      .from('files')
-      .upload(path, file, { upsert: true });
+    // upload (no native progress callback in this SDK)
+    const { data: upData, error: upErr } = await supabase.storage.from('files').upload(path, file, { upsert:true });
+    if(upErr) throw upErr;
 
-    if (uploadErr) throw uploadErr;
+    // get public url
+    const { data: urlData } = supabase.storage.from('files').getPublicUrl(path);
+    const publicUrl = urlData?.publicUrl || '';
 
-    // we can't reliably stream progress with this API; show complete
-    uploadBar.style.width = '100%';
-    uploadPercent.textContent = '100%';
-    uploadStatus.textContent = 'Stored. Saving DB record...';
-
-    // get public URL
-    const { data: publicData } = sb.storage.from('files').getPublicUrl(path);
-    const publicUrl = publicData?.publicUrl || '';
-
-    // insert into DB
-    const { error: insertErr } = await sb.from('files').insert([{
+    // insert DB row
+    const insertObj = {
       name: file.name,
       subject,
       url: publicUrl,
       path,
       created_at: new Date().toISOString()
-    }]);
+    };
 
-    if (insertErr) throw insertErr;
+    const { data: insData, error: insErr } = await supabase.from('files').insert([insertObj]).select().limit(1).single();
+    if(insErr) throw insErr;
 
-    uploadStatus.textContent = 'Saved.';
-    setTimeout(()=>{ uploadProgress.style.display = 'none'; uploadBar.style.width = '0%'; uploadPercent.textContent = '0%';}, 900);
-    loadFiles(subject);
-  } catch (err) {
-    alert('Upload error: ' + (err.message || JSON.stringify(err)));
-    uploadStatus.textContent = 'Error';
+    // update uploading row to final item
+    place.done(insData);
+  }catch(err){
+    console.error('upload err', err);
+    place.fail();
+    alert('Upload failed: ' + (err.message || JSON.stringify(err)));
   } finally {
-    hideLoading();
+    // clear input so same file can be selected again
+    ev.target.value = '';
   }
+});
+
+/* create uploading row in UI and return helpers to update it */
+function createUploadingRow(filename, subject){
+  const row = document.createElement('div');
+  row.className = 'file-row uploading';
+  row.innerHTML = `
+    <div class="file-meta">
+      <div class="file-title">${escapeHtml(filename)}</div>
+      <div class="file-sub">Subject: ${escapeHtml(subject)} • Uploading… <span class="spinner-inline"></span></div>
+      <div class="progress"><b style="width:4%"></b></div>
+    </div>
+    <div class="file-actions"></div>
+  `;
+  // insert at top
+  fileList.prepend(row);
+
+  const bar = row.querySelector('.progress > b');
+
+  // animate progress visually to keep user engaged
+  let pct = 8;
+  const t = setInterval(()=> {
+    pct = Math.min(92, pct + Math.random()*12);
+    bar.style.width = pct + '%';
+  }, 300);
+
+  return {
+    done(data){
+      clearInterval(t);
+      bar.style.width = '100%';
+      // replace row content with final display
+      row.innerHTML = `
+        <div class="file-meta">
+          <div class="file-title">${escapeHtml(data.name)}</div>
+          <div class="file-sub">${escapeHtml(data.subject)} • ${new Date(data.created_at).toLocaleString()}</div>
+        </div>
+        <div class="file-actions">
+          <button class="btn-view">View</button>
+          <button class="btn-delete">Delete</button>
+        </div>
+      `;
+      // attach handlers
+      row.querySelector('.btn-view').addEventListener('click', ()=> openPdf(data.url, data.name));
+      row.querySelector('.btn-delete').addEventListener('click', async ()=>{
+        if(!confirm('Delete this file?')) return;
+        try{
+          await supabase.from('files').delete().eq('id', data.id);
+          if(data.path) await supabase.storage.from('files').remove([data.path]);
+          row.remove();
+        }catch(e){ alert('Delete failed: ' + (e.message || e)); }
+      });
+    },
+    fail(){
+      clearInterval(t);
+      row.querySelector('.file-sub').textContent = 'Upload failed';
+      row.style.opacity = '0.6';
+    }
+  };
 }
 
-// load files for selected subject: queries 'files' table in Supabase
-async function loadFiles(subject) {
-  showLoading();
-  fileList.innerHTML = '';
-  currentSubject.textContent = subject;
-  const q = (searchInput.value || '').trim();
+/* ---------- loadFiles (by subject) ---------- */
+async function loadFiles(){
+  fileList.innerHTML = '<div class="muted">Loading files…</div>';
+  const subject = subjectSelect.value || 'Anatomy';
+  try{
+    const { data, error } = await supabase.from('files').select('*').eq('subject', subject).order('created_at', { ascending:false });
+    if(error) throw error;
 
-  try {
-    let query = sb.from('files').select('*').eq('subject', subject).order('created_at',{ ascending:false });
-    if (q) query = query.ilike('name', `%${q}%`);
-
-    const { data, error } = await query;
-    if (error) throw error;
-
-    if (!data || data.length === 0) {
-      fileList.innerHTML = '<div class="muted">No files yet.</div>';
+    fileList.innerHTML = '';
+    if(!data || data.length === 0){
+      fileList.innerHTML = '<div class="muted">No files for this subject yet.</div>';
       return;
     }
 
     data.forEach(item => {
-      const row = document.createElement('div');
-      row.className = 'file-row';
-      row.innerHTML = `
-        <div style="min-width:0;">
-          <div style="font-weight:700">${escapeHtml(item.name)}</div>
-          <div class="muted" style="font-size:12px;">${escapeHtml(item.subject)} • ${new Date(item.created_at).toLocaleString()}</div>
+      const div = document.createElement('div');
+      div.className = 'file-row';
+      div.innerHTML = `
+        <div class="file-meta">
+          <div class="file-title">${escapeHtml(item.name)}</div>
+          <div class="file-sub">${escapeHtml(item.subject)} • ${new Date(item.created_at).toLocaleString()}</div>
         </div>
-        <div style="display:flex; gap:8px; align-items:center;">
-          <button class="btn btn-ghost viewBtn">View</button>
-          ${currentUser && currentUser.role === 'teacher' ? '<button class="btn btn-danger deleteBtn">Delete</button>' : ''}
+        <div class="file-actions">
+          <button class="btn-view">View</button>
+          ${(getUserRole() === 'teacher') ? '<button class="btn-delete">Delete</button>' : ''}
         </div>
       `;
+      fileList.appendChild(div);
 
-      // view
-      row.querySelector('.viewBtn').onclick = () => {
-        pdfFrame.src = item.url;
-        pdfTitle.textContent = item.name;
-        pdfOverlay.style.display = 'flex';
-      };
+      div.querySelector('.btn-view').addEventListener('click', ()=> openPdf(item.url, item.name));
 
-      // delete
-      if (currentUser && currentUser.role === 'teacher') {
-        row.querySelector('.deleteBtn').onclick = async () => {
-          if (!confirm('Delete this file?')) return;
-          try {
-            // delete DB row
-            const { error: delErr } = await sb.from('files').delete().eq('id', item.id);
-            if (delErr) throw delErr;
-
-            // delete storage object using stored path
-            if (item.path) {
-              const { error: rmErr } = await sb.storage.from('files').remove([item.path]);
-              if (rmErr) console.warn('storage remove error', rmErr);
-            } else {
-              // fallback: try to derive path from URL (not ideal)
-              const u = new URL(item.url);
-              const pathParts = decodeURIComponent(u.pathname).split('/');
-              // remove first two parts (/storage/v1/object/public/{bucket}/path...)
-              const idx = pathParts.indexOf('files');
-              if (idx >= 0) {
-                const path = pathParts.slice(idx+1).join('/');
-                await sb.storage.from('files').remove([path]);
-              }
-            }
-            loadFiles(subjectSelect.value);
-          } catch (e) {
-            alert('Delete failed: ' + (e.message || JSON.stringify(e)));
-          }
-        };
+      if(getUserRole() === 'teacher'){
+        div.querySelector('.btn-delete').addEventListener('click', async ()=>{
+          if(!confirm('Delete this file?')) return;
+          try{
+            await supabase.from('files').delete().eq('id', item.id);
+            if(item.path) await supabase.storage.from('files').remove([item.path]);
+            div.remove();
+          }catch(e){ alert('Delete failed: ' + (e.message || e)); }
+        });
       }
-
-      fileList.appendChild(row);
     });
 
-  } catch (err) {
-    fileList.innerHTML = '<div class="muted">Error loading files: ' + (err.message || err) + '</div>';
-  } finally {
-    hideLoading();
+  }catch(err){
+    console.error(err);
+    fileList.innerHTML = '<div class="muted">Failed to load files</div>';
   }
 }
 
-// utilities
+/* ---------- open PDF modal ---------- */
+function openPdf(url, name){
+  pdfTitle.textContent = name;
+  pdfFrame.src = url;
+  pdfModal.style.display = 'flex';
+}
+closePdf.addEventListener('click', ()=> { pdfModal.style.display = 'none'; pdfFrame.src = ''; });
+
+/* ---------- subject change reload ---------- */
+subjectSelect.addEventListener('change', loadFiles);
+
+/* ---------- user helpers ---------- */
+function getUserRole(){
+  try{
+    const raw = localStorage.getItem('eanotes_user');
+    if(!raw) return null;
+    return JSON.parse(raw).role;
+  }catch(e){ return null; }
+}
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function saveUser(obj){ localStorage.setItem('eanotes_user', JSON.stringify(obj)); }
 
-// search / refresh handlers
-refreshBtn.onclick = () => loadFiles(subjectSelect.value);
-searchInput.oninput = () => loadFiles(subjectSelect.value);
-subjectSelect.onchange = () => loadFiles(subjectSelect.value);
+/* ---------- finish login (exposed to login button) ---------- */
+/* Called by loginHandler in index (we attach globally) */
+window.finishLogin = function(role, name){
+  // not used here; kept for compatibility
+};
 
-// PDF close
-closePdfBtn.onclick = () => { pdfOverlay.style.display = 'none'; pdfFrame.src = ''; };
+/* ---------- expose small API to login script ---------- */
+window.appLoginSuccess = function(role, name){
+  // store session and show dashboard
+  saveUser({ role, name });
+  roleTag.textContent = role === 'teacher' ? 'Teacher' : 'Student';
+  welcomeText.textContent = role === 'teacher' ? 'Welcome, Teacher' : `Welcome, ${name}`;
+  if(role === 'teacher') controlsRow.classList.remove('hidden'); else controlsRow.classList.add('hidden');
+  showDashboard(true);
+  // load initial subject files
+  loadFiles();
+};
 
-// initialize UI state
-(function ready(){
-  // start with student selected
-  roleSelect.value = 'student';
-  document.getElementById('labelUser').textContent = 'Student name';
-  uploadProgress.style.display = 'none';
-  document.getElementById('uploadLabel').style.display = 'none';
-  // load default subject
-  loadFiles(subjectSelect.value);
-})();
+/* ---------- use login button event defined earlier: attach direct mapping ---------- */
+/* The login button already uses loginHandler (above) which calls finishLogin via saveUser & finishLogin wrapper */
