@@ -3,278 +3,223 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>EA Notes — Local Version</title>
+  <title>EA Notes — Cloud Version (Perfect)</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 
   <style>
     :root{
       --bg: #f4f7fb;
-      --card: rgba(255,255,255,0.9);
-      --glass: rgba(255,255,255,0.6);
+      --card: #ffffff;
       --muted: #7b8794;
       --accent: #0b69ff;
       --danger: #e23b3b;
     }
     *{box-sizing:border-box}
-    html,body{height:100%}
     body{
       margin:0;
-      font-family:Inter,system-ui,Segoe UI,Roboto,Arial;
-      background: linear-gradient(180deg,#e6eefc 0%, #f7fbff 100%);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:24px;
+      background:linear-gradient(180deg,#e6eefc,#f7fbff);
+      font-family:Inter,system-ui;
+      display:flex;align-items:center;justify-content:center;padding:24px;
     }
 
-    .app {
-      width:390px;
-      max-width:95%;
-      border-radius:28px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.85));
-      box-shadow: 0 20px 60px rgba(15,30,60,0.12);
-      overflow:hidden;
-      border:1px solid rgba(255,255,255,0.6);
+    .app{
+      width:390px;max-width:95%;background:white;border-radius:20px;
+      box-shadow:0 20px 50px rgba(0,0,0,0.12);overflow:hidden;
     }
-
-    header{
-      padding:18px 18px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:8px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.45), rgba(255,255,255,0.25));
-      border-bottom: 1px solid rgba(0,0,0,0.04);
-    }
-    .brand{display:flex;gap:10px;align-items:center}
-    .logo{
-      width:44px;height:44px;border-radius:12px;
-      background:linear-gradient(135deg,var(--accent),#6aa9ff);
-      display:flex;align-items:center;justify-content:center;color:white;font-weight:700;
-      box-shadow:0 6px 18px rgba(11,105,255,0.15);
-      font-size:18px;
-    }
-    h1{font-size:16px;margin:0}
-    .sub{font-size:11px;color:var(--muted);margin-top:2px}
-
-    main{padding:18px}
-
-    .card {
-      background: var(--card);
-      border-radius:14px;
-      padding:14px;
-      margin-bottom:12px;
-      box-shadow: 0 6px 18px rgba(20,40,90,0.04);
-      border:1px solid rgba(0,0,0,0.03);
-    }
-
-    label.small{font-size:12px;color:var(--muted);display:block;margin-bottom:8px}
-    input[type="text"], input[type="password"], select {
-      width:100%;
-      padding:12px 12px;
-      border-radius:10px;
-      border:1px solid rgba(12,34,70,0.06);
-      font-size:14px;
-      background:transparent;
-    }
-
-    .row{display:flex;gap:10px}
-    .btn {
-      display:inline-block;
-      background:var(--accent);
-      color:white;
-      border:none;
-      padding:10px 12px;
-      border-radius:10px;
-      cursor:pointer;
-      width:100%;
-      font-weight:600;
-      box-shadow: 0 6px 18px rgba(11,105,255,0.14);
-    }
-    .btn.ghost{background:transparent;color:var(--accent);border:1px solid rgba(11,105,255,0.12);box-shadow:none}
-    .btn.danger{background:var(--danger);box-shadow:none}
-    .muted{color:var(--muted);font-size:13px}
-
-    .file-list{display:flex;flex-direction:column;gap:10px}
-    .file-row{
-      display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;
-      background:linear-gradient(180deg, rgba(255,255,255,0.85), rgba(250,250,250,0.85));
-      border:1px solid rgba(0,0,0,0.03);
-    }
-    .file-meta{flex:1}
-    .file-name{font-weight:600}
-    .file-small{font-size:12px;color:var(--muted)}
-    .actions{display:flex; gap:8px;align-items:center}
-
+    header{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;background:#fff;border-bottom:1px solid #eee}
+    .logo{background:#0b69ff;color:white;font-weight:700;width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px}
+    main{padding:20px}
+    .card{background:var(--card);padding:16px;border-radius:14px;box-shadow:0 6px 18px rgba(0,0,0,0.05);margin-bottom:14px}
+    input,select{width:100%;padding:12px;border-radius:10px;border:1px solid #ddd;font-size:14px}
+    .btn{padding:10px 14px;border-radius:10px;border:none;font-weight:600;cursor:pointer;width:100%;}
+    .btn.primary{background:var(--accent);color:white}
+    .btn.ghost{background:white;border:1px solid #0b69ff;color:#0b69ff}
+    .btn.danger{background:var(--danger);color:white}
+    .file-row{display:flex;align-items:center;justify-content:space-between;padding:10px;border:1px solid #eee;border-radius:10px;margin-top:8px}
+    .actions{display:flex;gap:8px}
+    .view-btn{background:#0b69ff;color:white;border:none;padding:8px 12px;border-radius:8px;font-weight:600;cursor:pointer}
   </style>
 </head>
 <body>
-<div class="app" role="application">
+<div class="app">
   <header>
-    <div class="brand">
+    <div style="display:flex;gap:10px;align-items:center">
       <div class="logo">EA</div>
       <div>
-        <h1>EA Notes (Offline)</h1>
-        <div class="sub">Local storage version</div>
+        <div style="font-weight:700">EA Notes (Cloud)</div>
+        <div style="font-size:11px;color:var(--muted)">For teachers & students</div>
       </div>
     </div>
-    <div style="display:flex;gap:8px;align-items:center">
-      <div id="userRole" class="muted">Not logged in</div>
-    </div>
+    <div id="userRole" style="font-size:13px;color:var(--muted)">Not logged in</div>
   </header>
 
   <main>
+    <!-- LOGIN CARD -->
     <div id="loginCard" class="card">
-      <label class="small">Username</label>
+      <label>Username</label>
       <input id="username" type="text" placeholder="Your name" />
 
-      <label class="small" style="margin-top:10px">Password</label>
+      <label style="margin-top:10px">Password</label>
       <input id="password" type="password" placeholder="Enter password" />
 
-      <div class="row" style="margin-top:10px">
-        <button class="btn" onclick="login()">Login</button>
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <button class="btn primary" onclick="appLogin()">Login</button>
         <button class="btn ghost" onclick="toggleDark()">🌙</button>
       </div>
     </div>
 
+    <!-- APP CARD -->
     <div id="appCard" class="card" style="display:none">
       <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px">
-  <select id="folderSelect" onchange="loadFiles()">
-    <option>Anatomy</option>
-    <option>History</option>
-    <option>Inclusiveness</option>
-    <option>Civics</option>
-    <option>Global affairs</option>
-    <option>Geography</option>
-    <option>Psychology</option>
-  </select>
+        <select id="folderSelect" onchange="loadFiles()">
+          <option>Anatomy</option>
+          <option>History</option>
+          <option>Inclusiveness</option>
+          <option>Civics</option>
+          <option>Global affairs</option>
+          <option>Geography</option>
+          <option>Psychology</option>
+        </select>
 
-  <!-- CLEAN + FIXED UPLOAD BUTTON (TEACHER ONLY) -->
-  <div id="uploadSection" style="display:none;">
-    <label for="fileUpload" class="btn ghost" style="padding:8px 14px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
-      📤 <span>Upload</span>
-    </label>
-    <input id="fileUpload" type="file" style="display:none" />
-  </div>
-</div>
-" type="file" style="display:none" />
-        </div>" type="file" style="display:none" />
+        <!-- CLEAN UPLOAD BUTTON -->
+        <div id="uploadSection" style="display:none;">
+          <label for="fileUpload" class="btn ghost" style="padding:8px 14px;cursor:pointer;">📤 Upload</label>
+          <input id="fileUpload" type="file" style="display:none" />
+        </div>
       </div>
 
-      <div class="file-list card" style="padding:12px">
-        <div id="fileList"></div>
-      </div>
+      <div id="fileList"></div>
 
-      <div style="display:flex;gap:10px;margin-top:12px">
-        <button class="btn danger" onclick="logout()">Logout</button>
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <button class="btn danger" onclick="appLogout()">Logout</button>
         <button class="btn ghost" onclick="toggleDark()">Theme</button>
       </div>
     </div>
   </main>
 </div>
 
+<!-- Firebase Scripts -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
+
 <script>
-let currentRole = null;
-let filesDB = JSON.parse(localStorage.getItem("eanotes_files") || "{}");
+// 🔥 INSERT YOUR FIREBASE CONFIG HERE
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "",
+  appId: ""
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const storage = firebase.storage();
 
 const TEACHER_PASS = "@teacher123";
 const STUDENT_PASS = "@armyamanu";
 
-function saveDB(){
-  localStorage.setItem("eanotes_files", JSON.stringify(filesDB));
-}
+let currentUser = null;
+let currentRole = null;
 
-function login(){
+function appLogin(){
   const name = username.value.trim();
   const pass = password.value.trim();
 
-  if(pass === TEACHER_PASS){ currentRole = "teacher"; }
-  else if(pass === STUDENT_PASS && name !== ""){ currentRole = "student"; }
-  else{ alert("Incorrect password"); return; }
+  if(pass === TEACHER_PASS) currentRole = "teacher";
+  else if(pass === STUDENT_PASS) currentRole = "student";
+  else return alert("Incorrect password");
 
-  loginCard.style.display = "none";
-  appCard.style.display = "block";
-  userRole.textContent = currentRole;
-  loadFiles();
-  
-  // Show upload only for teacher
-  document.getElementById('uploadSection').style.display = (currentRole === "teacher") ? "block" : "none";
+  auth.signInAnonymously().then(res=>{
+    currentUser = res.user;
+    db.collection("users").doc(res.user.uid).set({name,role:currentRole},{merge:true});
+
+    loginCard.style.display="none";
+    appCard.style.display="block";
+    userRole.textContent=currentRole;
+
+    uploadSection.style.display = (currentRole==="teacher") ? "block" : "none";
+
+    loadFiles();
+  });
 }
 
-function logout(){ location.reload(); }
+function appLogout(){ location.reload(); }
 
 fileUpload.onchange = (e)=>{
-  if(currentRole !== "teacher"){ alert("Only teachers can upload."); return; }
+  if(currentRole!=="teacher") return alert("Only teachers can upload.");
 
   const file = e.target.files[0];
   if(!file) return;
 
   const subject = folderSelect.value;
+  const ref = storage.ref().child(`files/${subject}/${Date.now()}_${file.name}`);
+  const uploadTask = ref.put(file);
 
-  if(!filesDB[subject]) filesDB[subject] = [];
-
-  const reader = new FileReader();
-  reader.onload = ()=>{
-    filesDB[subject].unshift({
-      name: file.name,
-      size: file.size,
-      data: reader.result,
-      time: Date.now(),
-    });
-    saveDB();
-    loadFiles();
-  };
-  reader.readAsDataURL(file);
+  uploadTask.on('state_changed',()=>{},
+    err=>alert("Upload failed"),
+    async()=>{
+      const url = await uploadTask.snapshot.ref.getDownloadURL();
+      await db.collection("files").add({
+        subject,
+        name:file.name,
+        size:file.size,
+        url,
+        time:Date.now()
+      });
+      loadFiles();
+    }
+  );
 };
 
-function loadFiles(){
+async function loadFiles(){
   const subject = folderSelect.value;
   const list = document.getElementById("fileList");
+  list.innerHTML = "<div style='color:#777'>Loading...</div>";
+
+  const snap = await db.collection("files").where("subject","==",subject).orderBy("time","desc").get();
+
+  if(snap.empty){ list.innerHTML = "<div style='color:#777'>No files added.</div>"; return; }
+
   list.innerHTML = "";
 
-  const subjectFiles = filesDB[subject] || [];
-
-  if(subjectFiles.length === 0){
-    list.innerHTML = `<div class='muted'>No files added.</div>`;
-    return;
-  }
-
-  subjectFiles.forEach((f, i)=>{
-    const row = document.createElement("div");
-    row.className = "file-row";
-    row.innerHTML = `
-      <div class='file-meta'>
-        <div class='file-name'>${f.name}</div>
-        <div class='file-small'>${(f.size/1024).toFixed(2)} KB</div>
-      </div>
-      <div class='actions'>
-        <button class='btn ghost view-btn' style='background:#0b69ff;color:white;padding:8px 14px;border-radius:8px;font-weight:600;' onclick='viewFile("${subject}",${i})'>View</button>
-        ${currentRole === "teacher" ? `<button class='btn ghost delete-btn' onclick='deleteFile("${subject}",${i})'>Delete</button>` : ""}
-      </div>
-    `;
-    list.appendChild(row);
+  snap.forEach(doc=>{
+    const f = doc.data();
+    list.innerHTML += `
+      <div class='file-row'>
+        <div>
+          <div style='font-weight:600'>${f.name}</div>
+          <div style='font-size:12px;color:#777'>${(f.size/1024).toFixed(1)} KB</div>
+        </div>
+        <div class='actions'>
+          <button class='view-btn' onclick="window.open('${f.url}','_blank')">View</button>
+          ${currentRole==="teacher" ? `<button class='btn ghost' onclick="deleteFile('${doc.id}','${f.url}')">Delete</button>` : ""}
+        </div>
+      </div>`;
   });
 }
 
-function viewFile(subject, index){
-  const file = filesDB[subject][index];
-  const win = window.open();
-  win.document.write(`<iframe style='width:100%;height:100%' src='${file.data}'></iframe>`);
-}
-
-function deleteFile(subject, index){
+async function deleteFile(id,url){
   if(!confirm("Delete file?")) return;
-  filesDB[subject].splice(index,1);
-  saveDB();
+
+  await db.collection("files").doc(id).delete();
+
+  const path = decodeURIComponent(url.split('/o/')[1]).split('?')[0];
+  await storage.ref().child(path).delete().catch(()=>{});
+
   loadFiles();
 }
 
 function toggleDark(){
-  document.body.style.background = (document.body.style.background.includes("0f17")) ?
-    "linear-gradient(180deg,#e6eefc,#f7fbff)"
-    : "linear-gradient(180deg,#0f1724,#0b233f)";
+  document.body.style.background = document.body.style.background.includes("0f17") ?
+    "linear-gradient(180deg,#e6eefc,#f7fbff)" : "linear-gradient(180deg,#0f1724,#0b233f)";
 }
 </script>
+
 </body>
 </html>
