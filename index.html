@@ -131,21 +131,35 @@ function appLogin(){
   const name = username.value.trim();
   const pass = password.value.trim();
 
+  // Require name for students
+  if(pass === STUDENT_PASS && name === ""){
+    alert("Students must enter a name.");
+    return;
+  }
+
   if(pass === TEACHER_PASS) currentRole = "teacher";
   else if(pass === STUDENT_PASS) currentRole = "student";
   else return alert("Incorrect password");
 
+  showLoader();
+
   auth.signInAnonymously().then(res=>{
     currentUser = res.user;
-    db.collection("users").doc(res.user.uid).set({name,role:currentRole},{merge:true});
+    return db.collection("users").doc(res.user.uid).set({name,role:currentRole},{merge:true});
+  }).then(()=>{
+    hideLoader();
 
     loginCard.style.display="none";
     appCard.style.display="block";
     userRole.textContent=currentRole;
-
     uploadSection.style.display = (currentRole==="teacher") ? "block" : "none";
 
     loadFiles();
+  }).catch(err=>{
+    hideLoader();
+    alert("Login failed: " + err.message);
+  });
+}
   });
 }
 
@@ -219,6 +233,19 @@ function toggleDark(){
   document.body.style.background = document.body.style.background.includes("0f17") ?
     "linear-gradient(180deg,#e6eefc,#f7fbff)" : "linear-gradient(180deg,#0f1724,#0b233f)";
 }
+</script>
+
+<div id="loaderOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(3px);z-index:999;align-items:center;justify-content:center;">
+  <div style="width:60px;height:60px;border:6px solid #fff;border-top-color:#0b69ff;border-radius:50%;animation:spin 0.9s linear infinite"></div>
+</div>
+
+<style>
+@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+</style>
+
+<script>
+function showLoader(){ document.getElementById('loaderOverlay').style.display = 'flex'; }
+function hideLoader(){ document.getElementById('loaderOverlay').style.display = 'none'; }
 </script>
 
 </body>
