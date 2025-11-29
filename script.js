@@ -1,45 +1,41 @@
-/*********************************************************
-  EA NOTES - CLEAN 2025 VERSION
-  ✔ Full Login
-  ✔ Roles
-  ✔ Upload
-  ✔ Delete
-  ✔ PDF Preview
-  ✔ Dark Mode
-  ✔ Loading Animation
-**********************************************************/
+/******************************
+ *  EA NOTES CLOUD - FULL JS
+ *  FAST UPLOAD VERSION
+ ******************************/
 
-console.log("script.js loaded ✔");
-
-// ---------------- FIREBASE INIT -----------------
+// Your Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyAnUvU6tCpnO9oD4wdXbLS1o7jWpQuNPzE",
-  authDomain: "army-6b712.firebaseapp.com",
-  projectId: "army-6b712",
-  storageBucket: "army-6b712.appspot.com",
-  messagingSenderId: "468802966776",
-  appId: "1:468802966776:web:57cc6f23da92b6f3f7d70d"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_STORAGE_BUCKET",
+  messagingSenderId: "YOUR_MSG",
+  appId: "YOUR_APP_ID"
 };
-firebase.initializeApp(firebaseConfig);
 
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
 
-// --------------- DOM -----------------
+/******************************
+ * UI Elements
+ ******************************/
+
 const loginArea = document.getElementById("loginArea");
 const mainArea = document.getElementById("mainArea");
-const usernameInput = document.getElementById("username");
-const passwordInput = document.getElementById("password");
 const btnLogin = document.getElementById("btnLogin");
 const btnLogout = document.getElementById("btnLogout");
-const userRole = document.getElementById("userRole");
-
-const uploadBtn = document.getElementById("uploadBtn");
-const fileUpload = document.getElementById("fileUpload");
+const username = document.getElementById("username");
+const password = document.getElementById("password");
 const folderSelect = document.getElementById("folderSelect");
+const fileUpload = document.getElementById("fileUpload");
+const uploadBtn = document.getElementById("uploadBtn");
 const fileList = document.getElementById("fileList");
 const searchInput = document.getElementById("searchInput");
+const loadingOverlay = document.getElementById("loadingOverlay");
+const userRole = document.getElementById("userRole");
 const btnRefresh = document.getElementById("btnRefresh");
 
 const pdfOverlay = document.getElementById("pdfOverlay");
@@ -47,185 +43,207 @@ const pdfFrame = document.getElementById("pdfFrame");
 const pdfName = document.getElementById("pdfName");
 const closePdf = document.getElementById("closePdf");
 
+/******************************
+ * Loading Overlay
+ ******************************/
+
+function showLoading() {
+  loadingOverlay.style.display = "flex";
+}
+function hideLoading() {
+  loadingOverlay.style.display = "none";
+}
+
+/******************************
+ * Dark Mode
+ ******************************/
+
 const themeToggle = document.getElementById("themeToggle");
-
-// ---- LOADING SCREEN ----
-const loadingOverlay = document.getElementById("loadingOverlay");
-function showLoading() { loadingOverlay.style.display = "flex"; }
-function hideLoading() { loadingOverlay.style.display = "none"; }
-
-// State
-let currentRole = "guest";
-let filesCache = [];
-
-// ---------------- DARK MODE ----------------
-themeToggle.onclick = () => {
+themeToggle.addEventListener("click", () => {
   document.body.classList.toggle("dark");
-};
+  themeToggle.textContent = document.body.classList.contains("dark") ? "☀️" : "🌙";
+});
 
-// ---------------- LOGIN ----------------
-btnLogin.onclick = async () => {
-  const val = usernameInput.value.trim();
-  const pass = passwordInput.value;
+/******************************
+ * LOGIN SYSTEM
+ ******************************/
 
-  if (!val) return alert("Enter a name (student) or email (teacher)");
+btnLogin.addEventListener("click", async () => {
+  const user = username.value.trim();
+  const pass = password.value.trim();
+
+  if (!user) return alert("Please enter username or email");
 
   showLoading();
 
   try {
-    let cred;
+    let isTeacher = pass.length > 0;
 
-    if (val.includes("@")) {
-      cred = await auth.signInWithEmailAndPassword(val, pass);
-      await db.collection("users").doc(cred.user.uid).set({ role: "teacher" }, { merge: true });
-      currentRole = "teacher";
+    if (isTeacher) {
+      // Teacher login (email + password)
+      await auth.signInWithEmailAndPassword(user, pass);
     } else {
-      cred = await auth.signInAnonymously();
-      await db.collection("users").doc(cred.user.uid).set(
-        { name: val, role: "student" },
-        { merge: true }
-      );
-      currentRole = "student";
+      // Student login (anonymous)
+      await auth.signInAnonymously();
     }
 
-    userRole.textContent = currentRole;
-    uploadBtn.style.display = currentRole === "teacher" ? "inline-block" : "none";
+  } catch (err) {
+    alert("Login failed: " + err.message);
+    hideLoading();
+  }
+});
 
+/******************************
+ * AUTH STATE CHANGE
+ ******************************/
+
+auth.onAuthStateChanged(async (user) => {
+  if (user) {
     loginArea.style.display = "none";
     mainArea.style.display = "block";
 
-    await loadFiles();
-  } catch (err) {
-    console.error(err);
-    alert(err.message);
+    let role = user.isAnonymous ? "student" : "teacher";
+    userRole.textContent = role;
+
+    uploadBtn.style.display = role === "teacher" ? "block" : "none";
+
+    loadFiles(folderSelect.value);
+
+  } else {
+    loginArea.style.display = "block";
+    mainArea.style.display = "none";
+    userRole.textContent = "Not logged in";
   }
-
   hideLoading();
-};
+});
 
-// ---------------- LOGOUT ----------------
-btnLogout.onclick = async () => {
+/******************************
+ * LOGOUT
+ ******************************/
+
+btnLogout.addEventListener("click", () => {
+  auth.signOut();
+});
+
+/******************************
+ * FAST FILE UPLOAD (Resumable)
+ ******************************/
+
+async function uploadFile(file, subject) {
   showLoading();
-  await auth.signOut();
-  currentRole = "guest";
-  userRole.textContent = "Not logged in";
-  mainArea.style.display = "none";
-  loginArea.style.display = "block";
-  hideLoading();
-};
 
-// --------------- LOAD FILES ----------------
-async function loadFiles() {
-  showLoading();
+  try {
+    const timestamp = Date.now();
+    const path = `files/${subject}/${timestamp}_${file.name}`;
+    const storageRef = storage.ref(path);
 
-  const subject = folderSelect.value;
-  fileList.innerHTML = "Loading...";
+    // Fast upload
+    const uploadTask = storageRef.put(file);
 
-  const snap = await db
-    .collection("files")
-    .where("subject", "==", subject)
-    .orderBy("time", "desc")
-    .get();
+    // Wait for finish
+    await new Promise((resolve, reject) => {
+      uploadTask.on("state_changed", null, reject, () => resolve());
+    });
 
-  filesCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  renderFiles();
+    // Get URL
+    const url = await storageRef.getDownloadURL();
+
+    // Save DB entry
+    await db.collection("files").add({
+      name: file.name,
+      size: file.size,
+      url: url,
+      subject: subject,
+      time: timestamp,
+    });
+
+    alert("Upload complete!");
+    loadFiles(subject);
+
+  } catch (error) {
+    alert("Upload failed: " + error.message);
+    console.error(error);
+  }
 
   hideLoading();
 }
 
-// --------------- RENDER FILES ----------------
-function renderFiles() {
-  const q = searchInput.value.toLowerCase();
-
-  const filtered = filesCache.filter(f => f.name.toLowerCase().includes(q));
-
-  if (filtered.length === 0) {
-    fileList.innerHTML = "No files found.";
-    return;
-  }
-
-  fileList.innerHTML = filtered
-    .map(
-      f => `
-    <div class="file-row">
-      <div>
-        <b>${f.name}</b><br>
-        <small>${(f.size / 1024).toFixed(1)} KB</small>
-      </div>
-      <div>
-        <button class="btn primary" onclick="previewPDF('${f.url}','${f.name}')">Preview</button>
-        ${
-          currentRole === "teacher"
-            ? `<button class="btn danger" onclick="deleteFile('${f.id}','${f.url}')">Delete</button>`
-            : ""
-        }
-      </div>
-    </div>
-  `
-    )
-    .join("");
-}
-
-// --------------- PREVIEW PDF ----------------
-window.previewPDF = (url, name) => {
-  pdfFrame.src = url;
-  pdfName.textContent = name;
-  pdfOverlay.style.display = "flex";
-};
-
-closePdf.onclick = () => {
-  pdfOverlay.style.display = "none";
-  pdfFrame.src = "";
-};
-
-// --------------- UPLOAD FILE ----------------
-fileUpload.onchange = async e => {
-  if (currentRole !== "teacher") return alert("Only teachers can upload.");
-
+fileUpload.addEventListener("change", async (e) => {
   const file = e.target.files[0];
   if (!file) return;
-
-  showLoading();
-
   const subject = folderSelect.value;
-  const path = `files/${subject}/${Date.now()}_${file.name}`;
-  const ref = storage.ref().child(path);
+  await uploadFile(file, subject);
+});
 
-  await ref.put(file);
-  const url = await ref.getDownloadURL();
+/******************************
+ * LOAD FILES
+ ******************************/
 
-  await db.collection("files").add({
-    subject,
-    name: file.name,
-    size: file.size,
-    url,
-    time: Date.now()
-  });
-
-  await loadFiles();
-  hideLoading();
-};
-
-// --------------- DELETE FILE ----------------
-window.deleteFile = async (id, url) => {
-  if (currentRole !== "teacher") return;
-
-  if (!confirm("Delete file?")) return;
-
+async function loadFiles(subject) {
   showLoading();
 
-  await db.collection("files").doc(id).delete();
+  fileList.innerHTML = "Loading...";
 
-  const path = decodeURIComponent(url.split("/o/")[1].split("?")[0]);
-  await storage.ref().child(path).delete();
+  try {
+    const snap = await db
+      .collection("files")
+      .where("subject", "==", subject)
+      .orderBy("time", "desc")
+      .get();
 
-  await loadFiles();
+    fileList.innerHTML = "";
+
+    snap.forEach((doc) => {
+      const data = doc.data();
+      const row = document.createElement("div");
+      row.className = "file-row";
+
+      row.innerHTML = `
+        <span>${data.name}</span>
+        <div style="display:flex; gap:10px;">
+          <button class="btn ghost viewBtn">View</button>
+          ${auth.currentUser && !auth.currentUser.isAnonymous ? `
+            <button class="btn danger deleteBtn">Delete</button>` : ""}
+        </div>
+      `;
+
+      // View button
+      row.querySelector(".viewBtn").addEventListener("click", () => {
+        pdfName.textContent = data.name;
+        pdfFrame.src = data.url;
+        pdfOverlay.style.display = "flex";
+      });
+
+      // Delete button (teacher only)
+      if (row.querySelector(".deleteBtn")) {
+        row.querySelector(".deleteBtn").addEventListener("click", async () => {
+          if (!confirm("Delete file?")) return;
+
+          await db.collection("files").doc(doc.id).delete();
+          await storage.ref(`files/${subject}/${data.time}_${data.name}`).delete();
+
+          loadFiles(subject);
+        });
+      }
+
+      fileList.appendChild(row);
+    });
+
+  } catch (err) {
+    alert("Could not load files: " + err.message);
+  }
+
   hideLoading();
-};
+}
 
-// --------------- EVENTS ----------------
-btnRefresh.onclick = loadFiles;
-folderSelect.onchange = loadFiles;
-searchInput.oninput = renderFiles;
+folderSelect.addEventListener("change", () => loadFiles(folderSelect.value));
+btnRefresh.addEventListener("click", () => loadFiles(folderSelect.value));
 
-console.log("Listeners attached ✔");
+/******************************
+ * PDF Viewer Close
+ ******************************/
+
+closePdf.addEventListener("click", () => {
+  pdfOverlay.style.display = "none";
+  pdfFrame.src = "";
+});
