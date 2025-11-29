@@ -5,22 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EA Notes Cloud</title>
 
-  <!-- Firebase SDKs -->
+  <!-- Firebase v8 -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 
-  <!-- MAIN STYLE -->
   <style>
     :root {
-      --bg:#f5f6fa;
+      --bg:#eef1f6;
       --card:#ffffff;
       --text:#111;
-      --soft:#eef1f5;
-      --accent:#0b69ff;
-      --muted:#7b8794;
-      --danger:#e23b3b;
+      --soft:#e4e8ef;
+      --accent:#2467ff;
+      --danger:#e84040;
     }
 
     body.dark {
@@ -29,87 +27,86 @@
       --text:#e6eefc;
       --soft:#1a2739;
       --accent:#3b82f6;
-      --muted:#9aa6b2;
       --danger:#ff4c4c;
     }
 
     body {
       margin:0;
-      font-family:Arial, sans-serif;
+      font-family:Arial;
       background:var(--bg);
       color:var(--text);
       display:flex;
       justify-content:center;
       padding:20px;
-      transition:0.3s;
     }
 
     .app {
       width:900px;
       background:var(--card);
-      border-radius:14px;
       padding:20px;
+      border-radius:14px;
     }
 
     .btn {
       padding:10px 14px;
       border-radius:10px;
+      font-weight:600;
       border:none;
       cursor:pointer;
-      font-weight:600;
     }
 
     .primary { background:var(--accent); color:white; }
     .danger { background:var(--danger); color:white; }
-    .ghost { background:none; border:1px solid var(--accent); color:var(--accent); }
+    .ghost { border:1px solid var(--accent); color:var(--accent); background:none; }
 
     input, select {
       width:100%;
       padding:12px;
       border-radius:10px;
-      border:1px solid #ccc;
       margin-top:6px;
+      border:1px solid #aaa;
       background:var(--soft);
       color:var(--text);
     }
 
     #mainArea { display:none; }
-    #fileList { margin-top:15px; }
+
+    #fileList { margin-top:20px; }
 
     .file-row {
       display:flex;
       justify-content:space-between;
-      padding:10px;
+      padding:12px;
       background:var(--soft);
       border-radius:10px;
       margin-bottom:10px;
     }
 
-    /* ----------- LOADING OVERLAY ----------- */
+    /* Loading overlay */
     #loadingOverlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.55);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 99999;
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.4);
+      display:none;
+      justify-content:center;
+      align-items:center;
+      z-index:9999;
     }
 
     .spinner {
-      width: 65px;
-      height: 65px;
-      border: 7px solid #ffffff44;
-      border-top-color: white;
-      border-radius: 50%;
-      animation: spin 0.9s linear infinite;
+      width:60px;
+      height:60px;
+      border:6px solid #ffffff44;
+      border-top-color:white;
+      border-radius:50%;
+      animation:spin .8s linear infinite;
     }
 
     @keyframes spin {
-      to { transform: rotate(360deg); }
+      to { transform: rotate(360deg);}
     }
 
-    /* PDF view */
+    /* PDF Viewer */
     #pdfOverlay {
       display:none;
       position:fixed;
@@ -117,7 +114,7 @@
       background:rgba(0,0,0,0.85);
       justify-content:center;
       align-items:center;
-      z-index:999;
+      z-index:10000;
     }
 
     #pdfViewer {
@@ -130,38 +127,54 @@
     }
 
     iframe { flex:1; border:0; }
+
+    /* Upload Progress UI */
+    #uploadProgressContainer {
+      display:none;
+      margin-top:15px;
+      background:var(--soft);
+      padding:10px;
+      border-radius:10px;
+    }
+
+    #uploadBar {
+      width:0%;
+      height:12px;
+      background:var(--accent);
+      border-radius:10px;
+      transition:width 0.2s;
+    }
+
   </style>
 </head>
 
 <body>
 
-<!-- LOADING ANIMATION -->
-<div id="loadingOverlay">
-  <div class="spinner"></div>
-</div>
+<div id="loadingOverlay"><div class="spinner"></div></div>
 
 <div class="app">
   <h2>EA Notes Cloud</h2>
 
-  <div style="text-align:right; margin-bottom:10px;">
+  <div style="text-align:right;margin-bottom:10px;">
     <button id="themeToggle" class="btn ghost">🌙</button>
     <span id="userRole">Not logged in</span>
   </div>
 
-  <!-- LOGIN -->
+  <!-- LOGIN AREA -->
   <div id="loginArea">
     <label>Teacher Email OR Student Name</label>
     <input id="username" type="text">
 
-    <label>Password (teachers only)</label>
+    <label>Password (Teacher only)</label>
     <input id="password" type="password">
 
-    <button id="btnLogin" class="btn primary" style="width:100%; margin-top:10px;">Login</button>
+    <button id="btnLogin" class="btn primary" style="margin-top:10px;width:100%;">Login</button>
   </div>
 
-  <!-- MAIN APP -->
+  <!-- MAIN AREA -->
   <div id="mainArea">
-    <label>Subject</label>
+
+    <label>Select Subject</label>
     <select id="folderSelect">
       <option>Anatomy</option>
       <option>History</option>
@@ -172,10 +185,16 @@
       <option>Psychology</option>
     </select>
 
-    <div style="margin-top:10px; display:flex; gap:10px;">
-      <label id="uploadBtn" for="fileUpload" class="btn ghost" style="display:none; cursor:pointer;">Upload PDF</label>
+    <div style="margin-top:10px;display:flex;gap:10px;">
+      <label id="uploadBtn" for="fileUpload" class="btn ghost" style="display:none;">Upload PDF</label>
       <input id="fileUpload" type="file" accept="application/pdf" style="display:none">
       <button id="btnLogout" class="btn danger">Logout</button>
+    </div>
+
+    <!-- TURBO UPLOAD BAR -->
+    <div id="uploadProgressContainer">
+      <div style="margin-bottom:5px;">Uploading… <span id="uploadPercent">0%</span></div>
+      <div id="uploadBar"></div>
     </div>
 
     <input id="searchInput" placeholder="Search files..." style="margin-top:20px;">
@@ -185,10 +204,10 @@
   </div>
 </div>
 
-<!-- PDF VIEWER -->
+<!-- PDF Viewer -->
 <div id="pdfOverlay">
   <div id="pdfViewer">
-    <div style="padding:10px; display:flex; justify-content:space-between;">
+    <div style="display:flex;justify-content:space-between;padding:10px;">
       <span id="pdfName"></span>
       <button id="closePdf" class="btn primary">Close</button>
     </div>
@@ -196,7 +215,6 @@
   </div>
 </div>
 
-<!-- CONNECT JS -->
 <script src="script.js"></script>
 </body>
 </html>
