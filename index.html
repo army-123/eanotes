@@ -1,18 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>EA Notes Cloud</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>EA Notes Cloud (Supabase)</title>
 
-  <!-- Firebase v8 CDN -->
+  <!-- Supabase JS (must be loaded before your script.js) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Firebase v8 CDN (Auth + Firestore for teacher accounts/metadata) -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 
   <style>
-    :root {
+    :root{
       --bg:#eef1f6;
       --card:#ffffff;
       --text:#111;
@@ -20,196 +22,130 @@
       --accent:#2467ff;
       --danger:#e84040;
     }
-
-    body.dark {
-      --bg:#0b1220;
-      --card:#0e1a2b;
-      --text:#e6eefc;
-      --soft:#1a2739;
-      --accent:#3b82f6;
-      --danger:#ff4c4c;
+    body.dark{
+      --bg:#0b1220; --card:#0e1a2b; --text:#e6eefc; --soft:#1a2739; --accent:#3b82f6; --danger:#ff4c4c;
     }
 
     body {
-      margin:0;
-      font-family:Arial;
-      background:var(--bg);
-      color:var(--text);
-      display:flex;
-      justify-content:center;
-      padding:20px;
+      margin:0; font-family:Arial, sans-serif; background:var(--bg); color:var(--text);
+      display:flex; justify-content:center; padding:20px;
     }
-
     .app {
-      width:900px;
-      background:var(--card);
-      padding:20px;
-      border-radius:14px;
+      width:900px; background:var(--card); padding:20px; border-radius:12px;
+      box-shadow:0 6px 24px rgba(0,0,0,0.06);
     }
+    h2 { margin:0 0 12px 0; }
 
     .btn {
-      padding:10px 14px;
-      border-radius:10px;
-      font-weight:600;
-      border:none;
-      cursor:pointer;
+      padding:10px 14px; border-radius:10px; border:0; cursor:pointer; font-weight:600;
     }
-
     .primary { background:var(--accent); color:white; }
     .danger { background:var(--danger); color:white; }
-    .ghost { border:1px solid var(--accent); color:var(--accent); background:none; }
+    .ghost { background:none; border:1px solid var(--accent); color:var(--accent); }
 
     input, select {
-      width:100%;
-      padding:12px;
-      border-radius:10px;
-      margin-top:6px;
-      border:1px solid #aaa;
-      background:var(--soft);
-      color:var(--text);
+      width:100%; padding:12px; border-radius:10px; border:1px solid #ccc; margin-top:6px;
+      background:var(--soft); color:var(--text);
     }
 
-    #mainArea { display:none; }
+    #mainArea { display:none; margin-top:12px; }
+    #fileList { margin-top:15px; }
 
-    .file-row {
-      display:flex;
-      justify-content:space-between;
-      padding:12px;
-      background:var(--soft);
-      border-radius:10px;
-      margin-bottom:10px;
+    .file-row{
+      display:flex; justify-content:space-between; align-items:center;
+      padding:12px; background:var(--soft); border-radius:10px; margin-bottom:10px;
     }
 
     /* Loading overlay */
-    #loadingOverlay {
-      position:fixed;
-      inset:0;
-      background:rgba(0,0,0,0.4);
-      display:none;
-      justify-content:center;
-      align-items:center;
-      z-index:9999;
-    }
+    #loadingOverlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); display:none; align-items:center; justify-content:center; z-index:9999; }
+    .spinner { width:60px; height:60px; border:6px solid #ffffff44; border-top-color:white; border-radius:50%; animation:spin .8s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
 
-    .spinner {
-      width:60px;
-      height:60px;
-      border:6px solid #ffffff44;
-      border-top-color:white;
-      border-radius:50%;
-      animation:spin .8s linear infinite;
-    }
+    /* PDF viewer */
+    #pdfOverlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); justify-content:center; align-items:center; z-index:10000; }
+    #pdfViewer { width:90%; height:90%; background:white; border-radius:10px; display:flex; flex-direction:column; }
+    iframe { flex:1; border:0; border-radius:0 0 10px 10px; }
 
-    @keyframes spin { to { transform: rotate(360deg); } }
+    /* upload progress */
+    #uploadProgressContainer { display:none; margin-top:15px; background:var(--soft); padding:10px; border-radius:10px; }
+    #uploadBar { width:0%; height:12px; background:var(--accent); border-radius:10px; transition:width .2s ease; }
 
-    /* PDF Viewer */
-    #pdfOverlay {
-      display:none;
-      position:fixed;
-      inset:0;
-      background:rgba(0,0,0,0.85);
-      justify-content:center;
-      align-items:center;
-      z-index:10000;
-    }
-
-    #pdfViewer {
-      width:90%;
-      height:90%;
-      background:white;
-      border-radius:10px;
-      display:flex;
-      flex-direction:column;
-    }
-
-    iframe { flex:1; border:0; }
-
-    /* Turbo upload progress */
-    #uploadProgressContainer {
-      display:none;
-      margin-top:15px;
-      background:var(--soft);
-      padding:10px;
-      border-radius:10px;
-    }
-
-    #uploadBar {
-      width:0%;
-      height:12px;
-      background:var(--accent);
-      border-radius:10px;
-      transition:width 0.2s;
+    /* small screens */
+    @media (max-width:640px){
+      .app { width:100%; padding:16px; border-radius:8px; }
     }
   </style>
 </head>
-
 <body>
 
-<div id="loadingOverlay"><div class="spinner"></div></div>
+  <!-- Loading overlay -->
+  <div id="loadingOverlay"><div class="spinner"></div></div>
 
-<div class="app">
-  <h2>EA Notes Cloud</h2>
+  <div class="app">
+    <h2>EA Notes Cloud</h2>
 
-  <div style="text-align:right;margin-bottom:10px;">
-    <button id="themeToggle" class="btn ghost">🌙</button>
-    <span id="userRole">Not logged in</span>
-  </div>
-
-  <!-- LOGIN AREA -->
-  <div id="loginArea">
-    <label>Teacher Email OR Student Name</label>
-    <input id="username" type="text">
-
-    <label>Password</label>
-    <input id="password" type="password">
-
-    <button id="btnLogin" class="btn primary" style="margin-top:10px;width:100%;">Login</button>
-  </div>
-
-  <!-- MAIN AREA -->
-  <div id="mainArea">
-
-    <label>Select Subject</label>
-    <select id="folderSelect">
-      <option>Anatomy</option>
-      <option>History</option>
-      <option>Inclusiveness</option>
-      <option>Civics</option>
-      <option>Global affairs</option>
-      <option>Geography</option>
-      <option>Psychology</option>
-    </select>
-
-    <div style="margin-top:10px;display:flex;gap:10px;">
-      <label id="uploadBtn" for="fileUpload" class="btn ghost" style="display:none;">Upload PDF</label>
-      <input id="fileUpload" type="file" accept="application/pdf" style="display:none">
-      <button id="btnLogout" class="btn danger">Logout</button>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <div>
+        <button id="themeToggle" class="btn ghost">🌙</button>
+        <span id="userRole" style="margin-left:8px;">Not logged in</span>
+      </div>
     </div>
 
-    <!-- TURBO UPLOAD BAR -->
-    <div id="uploadProgressContainer">
-      <div style="margin-bottom:5px;">Uploading… <span id="uploadPercent">0%</span></div>
-      <div id="uploadBar"></div>
+    <!-- LOGIN -->
+    <div id="loginArea">
+      <label>Teacher Email OR Student Name</label>
+      <input id="username" type="text" placeholder="e.g. teacher@example.com or John Doe">
+
+      <label>Password</label>
+      <input id="password" type="password" placeholder="Teachers: your email password — Students: common password">
+
+      <button id="btnLogin" class="btn primary" style="width:100%; margin-top:10px;">Login</button>
     </div>
 
-    <input id="searchInput" placeholder="Search files..." style="margin-top:20px;">
-    <button id="btnRefresh" class="btn ghost" style="margin-top:10px;">Refresh</button>
+    <!-- MAIN -->
+    <div id="mainArea">
+      <label>Select Subject</label>
+      <select id="folderSelect">
+        <option>Anatomy</option>
+        <option>History</option>
+        <option>Inclusiveness</option>
+        <option>Civics</option>
+        <option>Global affairs</option>
+        <option>Geography</option>
+        <option>Psychology</option>
+      </select>
 
-    <div id="fileList"></div>
-  </div>
-</div>
+      <div style="margin-top:10px; display:flex; gap:10px; align-items:center;">
+        <label id="uploadBtn" for="fileUpload" class="btn ghost" style="display:none; cursor:pointer;">Upload PDF</label>
+        <input id="fileUpload" type="file" accept="application/pdf" style="display:none;">
+        <button id="btnLogout" class="btn danger">Logout</button>
+      </div>
 
-<!-- PDF Viewer -->
-<div id="pdfOverlay">
-  <div id="pdfViewer">
-    <div style="display:flex;justify-content:space-between;padding:10px;">
-      <span id="pdfName"></span>
-      <button id="closePdf" class="btn primary">Close</button>
+      <!-- upload progress -->
+      <div id="uploadProgressContainer">
+        <div style="margin-bottom:8px;">Uploading… <span id="uploadPercent">0%</span></div>
+        <div id="uploadBar"></div>
+      </div>
+
+      <input id="searchInput" placeholder="Search files..." style="margin-top:16px;">
+      <button id="btnRefresh" class="btn ghost" style="margin-top:10px;">Refresh</button>
+
+      <div id="fileList"></div>
     </div>
-    <iframe id="pdfFrame"></iframe>
   </div>
-</div>
 
-<script src="script.js"></script>
+  <!-- PDF Viewer -->
+  <div id="pdfOverlay">
+    <div id="pdfViewer">
+      <div style="display:flex; justify-content:space-between; padding:10px;">
+        <span id="pdfName"></span>
+        <button id="closePdf" class="btn primary">Close</button>
+      </div>
+      <iframe id="pdfFrame"></iframe>
+    </div>
+  </div>
+
+  <!-- Your script: replace script.js with the Supabase-enabled script provided earlier -->
+  <script src="script.js"></script>
 </body>
 </html>

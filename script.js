@@ -1,10 +1,18 @@
-/******************************
- * EA NOTES CLOUD - FULL SYSTEM
- * Student login = name + password "@armyamanu"
- * Teacher login = Firebase email + password
- ******************************/
+/****************************************************
+ * EA NOTES CLOUD — FINAL SUPABASE VERSION
+ ****************************************************/
 
-// Firebase config
+/* -----------------------------
+   SUPABASE (UPLOAD + STORAGE)
+----------------------------- */
+const SUPABASE_URL = "https://hlstgluwamsuuqlctdzk.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhsc3RnbHV3YW1zdXVxbGN0ZHprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyNzMwMzQsImV4cCI6MjA3OTg0OTAzNH0.KUPx3pzrcd3H5aEx2B7mFosWNUVOEzXDD5gL-TmyawQ";
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+/* -----------------------------
+   FIREBASE (AUTH + FIRESTORE)
+----------------------------- */
 const firebaseConfig = {
   apiKey: "AIzaSyAnUvU6tCpnO9oD4wdXbLS1o7jWpQuNPzE",
   authDomain: "army-6b712.firebaseapp.com",
@@ -15,184 +23,174 @@ const firebaseConfig = {
   measurementId: "G-HLGJB2NRRP"
 };
 
-// Init Firebase v8
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
-const storage = firebase.storage();
 
-/******************************
- * UI Elements
- ******************************/
-
+/****************************************************
+ * UI ELEMENTS
+ ****************************************************/
 const loginArea = document.getElementById("loginArea");
 const mainArea = document.getElementById("mainArea");
-const btnLogin = document.getElementById("btnLogin");
-const btnLogout = document.getElementById("btnLogout");
 const username = document.getElementById("username");
 const password = document.getElementById("password");
-const folderSelect = document.getElementById("folderSelect");
-const fileUpload = document.getElementById("fileUpload");
-const uploadBtn = document.getElementById("uploadBtn");
-const fileList = document.getElementById("fileList");
-const searchInput = document.getElementById("searchInput");
-const loadingOverlay = document.getElementById("loadingOverlay");
 const userRole = document.getElementById("userRole");
-const btnRefresh = document.getElementById("btnRefresh");
 
-const pdfOverlay = document.getElementById("pdfOverlay");
-const pdfFrame = document.getElementById("pdfFrame");
-const pdfName = document.getElementById("pdfName");
-const closePdf = document.getElementById("closePdf");
+const fileList = document.getElementById("fileList");
+const fileUpload = document.getElementById("fileUpload");
+const folderSelect = document.getElementById("folderSelect");
+
+const loadingOverlay = document.getElementById("loadingOverlay");
 
 const uploadContainer = document.getElementById("uploadProgressContainer");
 const uploadBar = document.getElementById("uploadBar");
 const uploadPercent = document.getElementById("uploadPercent");
 
-/******************************
- * Loading overlay
- ******************************/
+const pdfOverlay = document.getElementById("pdfOverlay");
+const pdfFrame = document.getElementById("pdfFrame");
+const pdfName = document.getElementById("pdfName");
 
-function showLoading() { loadingOverlay.style.display = "flex"; }
-function hideLoading() { loadingOverlay.style.display = "none"; }
+/****************************************************
+ * HELPERS
+ ****************************************************/
+function showLoading() {
+  loadingOverlay.style.display = "flex";
+}
+function hideLoading() {
+  loadingOverlay.style.display = "none";
+}
 
-/******************************
- * Dark mode
- ******************************/
-
-document.getElementById("themeToggle").onclick = () => {
-  document.body.classList.toggle("dark");
-};
-
-/******************************
+/****************************************************
  * LOGIN SYSTEM
- ******************************/
-
-btnLogin.onclick = async () => {
-  const name = username.value.trim();
+ ****************************************************/
+document.getElementById("btnLogin").onclick = async () => {
+  const user = username.value.trim();
   const pass = password.value.trim();
 
-  if (!name) return alert("Enter your name or teacher email");
+  if (!user) return alert("Enter username or email");
 
   showLoading();
 
-  // STUDENT LOGIN
+  // ---- Student login ----
   if (pass === "@armyamanu") {
-    window.currentUser = { role: "student", name };
+    window.currentUser = { role: "student", name: user };
+
     loginArea.style.display = "none";
     mainArea.style.display = "block";
-    uploadBtn.style.display = "none";
+    document.getElementById("uploadBtn").style.display = "none";
+
     userRole.textContent = "student";
     loadFiles(folderSelect.value);
+
     hideLoading();
     return;
   }
 
-  // TEACHER LOGIN
+  // ---- Teacher login (Firebase Auth) ----
   try {
-    await auth.signInWithEmailAndPassword(name, pass);
-  } catch (e) {
-    alert("Login failed: " + e.message);
+    await auth.signInWithEmailAndPassword(user, pass);
+  } catch (err) {
+    alert("Login failed: " + err.message);
     hideLoading();
+    return;
   }
+
+  hideLoading();
 };
 
-/******************************
- * TEACHER AUTH STATE
- ******************************/
-
+/****************************************************
+ * TEACHER AUTH LISTENER
+ ****************************************************/
 auth.onAuthStateChanged((user) => {
   if (user) {
     loginArea.style.display = "none";
     mainArea.style.display = "block";
-    uploadBtn.style.display = "block";
+
+    document.getElementById("uploadBtn").style.display = "block";
+
     userRole.textContent = "teacher";
     window.currentUser = { role: "teacher", email: user.email };
+
     loadFiles(folderSelect.value);
-  } else {
-    if (!window.currentUser || window.currentUser.role !== "student") {
-      mainArea.style.display = "none";
-      loginArea.style.display = "block";
-      userRole.textContent = "Not logged in";
-    }
   }
 });
 
-/******************************
+/****************************************************
  * LOGOUT
- ******************************/
-
-btnLogout.onclick = () => {
+ ****************************************************/
+document.getElementById("btnLogout").onclick = () => {
   window.currentUser = null;
   auth.signOut();
-  loginArea.style.display = "block";
+
   mainArea.style.display = "none";
+  loginArea.style.display = "block";
 };
 
-/******************************
- * TURBO UPLOAD ENGINE
- ******************************/
-
-async function uploadFile(file, subject) {
-  showLoading();
+/****************************************************
+ * SUPABASE FILE UPLOAD ENGINE (FAST + PUBLIC)
+ ****************************************************/
+async function uploadToSupabase(file, subject) {
   uploadContainer.style.display = "block";
 
   const timestamp = Date.now();
-  const path = `files/${subject}/${timestamp}_${file.name}`;
-  const ref = storage.ref(path);
+  const path = `${subject}/${timestamp}_${file.name}`;
 
-  const task = ref.put(file);
+  // UPLOAD
+  const { data, error } = await sb.storage
+    .from("files")
+    .upload(path, file, {
+      cacheControl: "3600",
+      upsert: false
+    });
 
-  task.on(
-    "state_changed",
-    snap => {
-      let pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
-      uploadBar.style.width = pct + "%";
-      uploadPercent.textContent = pct + "%";
-    },
-    err => alert("Upload error: " + err.message),
-    async () => {
-      const url = await ref.getDownloadURL();
+  if (error) {
+    alert("Upload failed: " + error.message);
+    uploadContainer.style.display = "none";
+    return;
+  }
 
-      await db.collection("files").add({
-        name: file.name,
-        size: file.size,
-        url,
-        subject,
-        time: timestamp
-      });
+  uploadBar.style.width = "100%";
+  uploadPercent.textContent = "100%";
 
-      alert("Upload complete!");
-      uploadContainer.style.display = "none";
-      uploadBar.style.width = "0%";
-      loadFiles(subject);
-      hideLoading();
-    }
-  );
+  // PUBLIC URL
+  const { data: pub } = sb.storage
+    .from("files")
+    .getPublicUrl(path);
+
+  // SAVE TO FIRESTORE
+  await db.collection("files").add({
+    name: file.name,
+    url: pub.publicUrl,
+    subject,
+    time: timestamp
+  });
+
+  alert("Upload complete!");
+
+  uploadContainer.style.display = "none";
+  uploadBar.style.width = "0%";
+
+  loadFiles(subject);
 }
 
-fileUpload.onchange = e => {
+fileUpload.onchange = (e) => {
   const file = e.target.files[0];
-  if (file) uploadFile(file, folderSelect.value);
+  if (file) uploadToSupabase(file, folderSelect.value);
 };
 
-/******************************
- * LOAD FILES
- ******************************/
-
+/****************************************************
+ * LOAD FILES FROM FIRESTORE
+ ****************************************************/
 async function loadFiles(subject) {
   showLoading();
   fileList.innerHTML = "";
 
-  const snap = await db
-    .collection("files")
+  const snap = await db.collection("files")
     .where("subject", "==", subject)
     .orderBy("time", "desc")
     .get();
 
-  fileList.innerHTML = "";
-
-  snap.forEach(doc => {
+  snap.forEach((doc) => {
     const d = doc.data();
 
     const row = document.createElement("div");
@@ -200,7 +198,7 @@ async function loadFiles(subject) {
 
     row.innerHTML = `
       <span>${d.name}</span>
-      <div style="display:flex;gap:10px;">
+      <div style="display:flex; gap:10px;">
         <button class="btn ghost viewBtn">View</button>
         ${window.currentUser.role === "teacher"
           ? `<button class="btn danger deleteBtn">Delete</button>`
@@ -217,8 +215,14 @@ async function loadFiles(subject) {
     if (window.currentUser.role === "teacher") {
       row.querySelector(".deleteBtn").onclick = async () => {
         if (!confirm("Delete this file?")) return;
+
+        // Remove from Firestore
         await db.collection("files").doc(doc.id).delete();
-        await storage.ref(`files/${subject}/${d.time}_${d.name}`).delete();
+
+        // Remove from Supabase bucket
+        const removePath = `${subject}/${d.time}_${d.name}`;
+        await sb.storage.from("files").remove([removePath]);
+
         loadFiles(subject);
       };
     }
@@ -230,13 +234,18 @@ async function loadFiles(subject) {
 }
 
 folderSelect.onchange = () => loadFiles(folderSelect.value);
-btnRefresh.onclick = () => loadFiles(folderSelect.value);
 
-/******************************
+/****************************************************
  * CLOSE PDF VIEWER
- ******************************/
-
-closePdf.onclick = () => {
+ ****************************************************/
+document.getElementById("closePdf").onclick = () => {
   pdfOverlay.style.display = "none";
   pdfFrame.src = "";
+};
+
+/****************************************************
+ * DARK MODE
+ ****************************************************/
+document.getElementById("themeToggle").onclick = () => {
+  document.body.classList.toggle("dark");
 };
