@@ -1,4 +1,3 @@
-Amanuu, [11/29/2025 7:21 AM]
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,33 +16,24 @@ Amanuu, [11/29/2025 7:21 AM]
       --danger: #e23b3b;
     }
     *{box-sizing:border-box}
-    body{
-      margin:0;
-      background:linear-gradient(180deg,#e6eefc,#f7fbff);
-      font-family:Inter,system-ui;
-      display:flex;align-items:center;justify-content:center;padding:24px;
-    }
-
-    .app{
-      width:390px;max-width:95%;background:white;border-radius:20px;
-      box-shadow:0 20px 50px rgba(0,0,0,0.12);overflow:hidden;
-    }
+    body{margin:0;background:linear-gradient(180deg,#e6eefc,#f7fbff);font-family:Inter,system-ui;display:flex;align-items:center;justify-content:center;padding:24px}
+    .app{width:390px;max-width:95%;background:white;border-radius:20px;box-shadow:0 20px 50px rgba(0,0,0,0.12);overflow:hidden}
     header{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;background:#fff;border-bottom:1px solid #eee}
     .logo{background:#0b69ff;color:white;font-weight:700;width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px}
     main{padding:20px}
     .card{background:var(--card);padding:16px;border-radius:14px;box-shadow:0 6px 18px rgba(0,0,0,0.05);margin-bottom:14px}
     input,select{width:100%;padding:12px;border-radius:10px;border:1px solid #ddd;font-size:14px}
-    .btn{padding:10px 14px;border-radius:10px;border:none;font-weight:600;cursor:pointer;width:100%;}
+    .btn{padding:10px 14px;border-radius:10px;border:none;font-weight:600;cursor:pointer;width:100%}
     .btn.primary{background:var(--accent);color:white}
     .btn.ghost{background:white;border:1px solid #0b69ff;color:#0b69ff}
     .btn.danger{background:var(--danger);color:white}
     .file-row{display:flex;align-items:center;justify-content:space-between;padding:10px;border:1px solid #eee;border-radius:10px;margin-top:8px}
     .actions{display:flex;gap:8px}
     .view-btn{background:#0b69ff;color:white;border:none;padding:8px 12px;border-radius:8px;font-weight:600;cursor:pointer}
+    .muted{color:var(--muted);font-size:13px}
   </style>
 </head>
 <body>
-
 <div class="app">
   <header>
     <div style="display:flex;gap:10px;align-items:center">
@@ -66,8 +56,8 @@ Amanuu, [11/29/2025 7:21 AM]
       <input id="password" type="password" placeholder="Enter password" />
 
       <div style="display:flex;gap:10px;margin-top:14px">
-        <button class="btn primary" onclick="appLogin()">Login</button>
-        <button class="btn ghost" onclick="toggleDark()">🌙</button>
+        <button id="btnLogin" class="btn primary">Login</button>
+        <button class="btn ghost" id="btnTheme">🌙</button>
       </div>
     </div>
 
@@ -85,7 +75,7 @@ Amanuu, [11/29/2025 7:21 AM]
         </select>
 
         <div id="uploadSection" style="display:none;">
-          <label for="fileUpload" class="btn ghost" style="padding:8px 14px;cursor:pointer;">📤 Upload</label>
+          <label for="fileUpload" class="btn ghost" style="padding:8px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px">📤 <span>Upload</span></label>
           <input id="fileUpload" type="file" style="display:none" />
         </div>
       </div>
@@ -93,34 +83,30 @@ Amanuu, [11/29/2025 7:21 AM]
       <div id="fileList"></div>
 
       <div style="display:flex;gap:10px;margin-top:14px">
-        <button class="btn danger" onclick="appLogout()">Logout</button>
-        <button class="btn ghost" onclick="toggleDark()">Theme</button>
+        <button class="btn danger" id="btnLogout">Logout</button>
+        <button class="btn ghost" id="btnTheme2">Theme</button>
       </div>
     </div>
   </main>
 </div>
 
-<!-- Firebase COMPAT JS -->
+<!-- Firebase COMPAT JS (fixed URLs) -->
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.
-
-Amanuu, [11/29/2025 7:21 AM]
-com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
 
 <script>
 // ---------------------
-// REAL FIREBASE CONFIG
+// FIREBASE CONFIG - replace with your project values if different
 // ---------------------
 const firebaseConfig = {
   apiKey: "AIzaSyAnUvU6tCpnO9oD4wdXbLS1o7jWpQuNPzE",
   authDomain: "army-6b712.firebaseapp.com",
   projectId: "army-6b712",
-  storageBucket: "army-6b712.firebasestorage.app",
+  storageBucket: "army-6b712.appspot.com",
   messagingSenderId: "468802966776",
-  appId: "1:468802966776:web:57cc6f23da92b6f3f7d70d",
-  measurementId: "G-HLGJB2NRRP"
+  appId: "1:468802966776:web:57cc6f23da92b6f3f7d70d"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -133,232 +119,141 @@ const STUDENT_PASS = "@armyamanu";
 let currentUser = null;
 let currentRole = null;
 
-// ---------------------
-// LOGIN
-// ---------------------
-function appLogin(){
-  const name = username.value.trim();
-  const pass = password.value.trim();
+// Helper loader
+function showLoader(){ overlay.style.display='flex'; }
+function hideLoader(){ overlay.style.display='none'; }
 
-  if(pass === STUDENT_PASS && name === ""){
-    alert("Students must enter a name.");
-    return;
-  }
+// Login flow
+async function appLogin(){
+  const name = document.getElementById('username').value.trim();
+  const pass = document.getElementById('password').value.trim();
 
-  if(pass === TEACHER_PASS) currentRole = "teacher";
-  else if(pass === STUDENT_PASS) currentRole = "student";
-  else return alert("Incorrect password");
+  if(pass === STUDENT_PASS && name === ''){ alert('Students must enter a name.'); return; }
+  if(pass === TEACHER_PASS) currentRole = 'teacher';
+  else if(pass === STUDENT_PASS) currentRole = 'student';
+  else { alert('Incorrect password'); return; }
 
-  showLoader();
-
-  auth.signInAnonymously().then(res=>{
+  try{
+    showLoader();
+    const res = await auth.signInAnonymously();
     currentUser = res.user;
-    return db.collection("users").doc(res.user.uid).set({name,role:currentRole},{merge:true});
-  }).then(()=>{
-    hideLoader();
-    loginCard.style.display="none";
-    appCard.style.display="block";
-    userRole.textContent=currentRole;
-    uploadSection.style.display = (currentRole==="teacher") ? "block" : "none";
-    loadFiles();
-    initTelegram();
-  }).catch(err=>{
-    hideLoader();
-    alert("Login failed: " + err.message);
-  });
+    await db.collection('users').doc(currentUser.uid).set({ name, role: currentRole }, { merge:true });
+
+    // show app UI
+    loginCard.style.display='none';
+    appCard.style.display='block';
+    userRole.textContent = currentRole;
+    uploadSection.style.display = (currentRole === 'teacher') ? 'block' : 'none';
+
+    await loadFiles();
+  }catch(err){
+    alert('Login failed: ' + (err.message||err));
+  }finally{ hideLoader(); }
 }
 
-function appLogout(){ location.reload(); }
+function appLogout(){ auth.signOut().catch(()=>{}); location.reload(); }
 
-// ---------------------
-// LOAD FILES
-// ---------------------
+// Upload handler (teacher only)
+fileUpload.addEventListener('change', async function(e){
+  if(currentRole !== 'teacher'){ alert('Only teachers can upload.'); fileUpload.value=''; return; }
+  const file = e.target.files[0]; if(!file) return;
+  try{
+    showLoader();
+    const subject = folderSelect.value;
+    const storageRef = storage.ref().child(`files/${subject}/${Date.now()}_${file.name}`);
+    const task = storageRef.put(file);
+    task.on('state_changed', ()=>{}, err=>{ alert('Upload failed'); hideLoader(); }, async ()=>{
+      const url = await task.snapshot.ref.getDownloadURL();
+      await db.collection('files').add({ subject, name: file.name, size: file.size, url, time: Date.now() });
+      fileUpload.value='';
+      await loadFiles();
+      hideLoader();
+    });
+  }catch(err){ hideLoader(); alert('Upload error'); }
+});
+
+// Load files (DOM-based, safe)
 async function loadFiles(){
   const subject = folderSelect.value;
-  const list = document.getElementById("fileList");
+  const list = document.getElementById('fileList');
+  list.innerHTML = '<div class="muted">Loading...</div>';
+  try{
+    const snap = await db.collection('files').where('subject','==',subject).orderBy('time','desc').get();
+    list.innerHTML='';
+    if(snap.empty){ list.innerHTML = '<div class="muted">No files added.</div>'; return; }
 
-  list.innerHTML = "<div style='color:#777'>Loading...</div>";
+    snap.forEach(doc=>{
+      const f = doc.data();
+      const row = document.createElement('div'); row.className='file-row';
 
-  const snap = await db.collection("files")
-    .where("subject","==",subject)
-    .orderBy("time","desc")
-    .get();
+      const left = document.createElement('div');
+      const title = document.createElement('div'); title.style.fontWeight='600'; title.textContent = f.name;
+      const meta = document.createElement('div'); meta.style.fontSize='12px'; meta.style.color='#777'; meta.textContent = `${(f.size/1024).toFixed(1)} KB`;
+      left.appendChild(title); left.appendChild(meta);
 
-  if(snap.empty){ list.innerHTML = "<div style='color:#777'>No files added.</div>"; return; }
+      const actions = document.createElement('div'); actions.className='actions';
+      const viewBtn = document.createElement('button'); viewBtn.className='view-btn'; viewBtn.textContent='View';
+      viewBtn.onclick = ()=>{ openPdf(f.url); };
+      actions.appendChild(viewBtn);
 
-  list.innerHTML = "";
+      if(currentRole === 'teacher'){
+        const del = document.createElement('button'); del.className='btn ghost'; del.textContent='Delete';
+        del.onclick = ()=>{ deleteFile(doc.id, f.url); };
+        actions.appendChild(del);
+      }
 
-  snap.forEach(doc=>{
-    const f = doc.data();
-
-    list.innerHTML += `
-      <div class='file-row'>
-        <div>
-          <div style='font-weight:600'>${f.name}</div>
-          <div style='font-size:12px;color:#777'>${(f.size/1024).toFixed(1)} KB</div>
-        </div>
-        <div class='actions'>
-          <button class='view-btn' onclick="openPdf('${f.url}')">View</button>
-          ${currentRole==="teacher" ? <button class='btn ghost' onclick="deleteFile('${doc.id}','${f.url}')">Delete</button> : ""}
-        </div>
-      </div>`;
-  });
+      row.appendChild(left); row.appendChild(actions); list.appendChild(row);
+    });
+  }catch(err){ list.innerHTML = '<div class="muted">Failed to load files.</div>'; }
 }
 
-// ---------------------
-// UPLOAD
-// ---------------------
-fileUpload.onchange = (e)=>{
-  if(currentRole!=="teacher") return alert("Only teachers can upload.");
-
-  const file = e.target.files[0];
-  if(!file) return;
-
-  const subject = folderSelect.value;
-  const ref = storage.ref().child(`files/${subject}/${Date.now()}_${file.name}`);
-  const uploadTask = ref.put(file);
-
-  uploadTask.on('state_changed',()=>{},
-    err=>alert("Upload failed"),
-    async()=>{
-      const url = await uploadTask.snapshot.ref.getDownloadURL();
-      await db.collection("files").add({
-        subject,
-        name:file.name,
-        size:file.size,
-        url,
-        time:Date.now()
-      });
-      loadFiles();
-    }
-  );
-};
-
-// ---------------------
-// DELETE FILE
-// ---------------------
-async function deleteFile(id,url){
-  if(!confirm("Delete file?")) return;
-
-  await db.collection("files").doc(id).delete();
-
-  const path = decodeURIComponent(url.split('/o/')[1]).split('?')[0];
-  await storage.ref().child(path).delete().catch(()=>{});
-
-  loadFiles();
+// Delete
+async function deleteFile(id,url){ if(!confirm('Delete file?')) return; try{ await db.collection('files').doc(id).delete();
+  // attempt to remove storage object if path can be derived
+  try{ const path = decodeURIComponent(url.split('/o/')[1]).split('?')[0]; await storage.ref().child(path).delete(); }catch(e){}
+  await loadFiles(); }catch(e){ alert('Delete failed'); }
 }
 
-// ---------------------
-// THEME
-// ---------------------
-function toggleDark(){
-  document.body.style.
+// Open PDF or file in new tab
+function openPdf(url){ window.open(url,'_blank'); }
 
-Amanuu, [11/29/2025 7:21 AM]
-background = document.body.style.background.includes("0f17") ?
-    "linear-gradient(180deg,#e6eefc,#f7fbff)" : "linear-gradient(180deg,#0f1724,#0b233f)";
-}
+// Theme toggle
+function toggleDark(){ document.body.style.background = document.body.style.background.includes('0f17') ? 'linear-gradient(180deg,#e6eefc,#f7fbff)' : 'linear-gradient(180deg,#0f1724,#0b233f)'; }
 
-// ---------------------
-// Loader
-// ---------------------
-function showLoader(){ document.getElementById('loaderOverlay').style.display = 'flex'; }
-function hideLoader(){ document.getElementById('loaderOverlay').style.display = 'none'; }
+// Attach UI events
+btnLogin.addEventListener('click', appLogin);
+btnLogout.addEventListener('click', appLogout);
+btnTheme.addEventListener('click', toggleDark);
+btnTheme2.addEventListener('click', toggleDark);
 
-// ---------------------
-// TELEGRAM MINI APP
-// ---------------------
-function initTelegram(){
-  if(!window.Telegram || !window.Telegram.WebApp){
-    console.log("Not inside Telegram");
-    return;
-  }
-
-  const tg = window.Telegram.WebApp;
-
-  try { tg.expand(); } catch(e){}
-
-  if(tg.MainButton){
-    tg.MainButton.setText("Upload File");
-    currentRole==="teacher" ? tg.MainButton.show() : tg.MainButton.hide();
-  }
-
-  tg.onEvent('backButtonClicked', ()=>{
-    if(pdfOverlay.style.display==="flex"){
-      pdfClose.click();
-    } else {
-      tg.close();
-    }
-  });
-}
 </script>
 
-<!-- Loader -->
-<div id="loaderOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(3px);z-index:999;align-items:center;justify-content:center;">
-  <div style="width:60px;height:60px;border:6px solid #fff;border-top-color:#0b69ff;border-radius:50%;animation:spin 0.9s linear infinite"></div>
+<!-- Loader overlay -->
+<div id="overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);backdrop-filter:blur(2px);z-index:999;align-items:center;justify-content:center;">
+  <div style="width:56px;height:56px;border:6px solid rgba(255,255,255,0.9);border-top-color:#0b69ff;border-radius:50%;animation:spin 0.9s linear infinite"></div>
 </div>
 
-<style>
-@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-</style>
+<style>@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}</style>
 
-<!-- 📄 PDF VIEWER -->
+<!-- PDF viewer (simple) -->
 <div id="pdfOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:2000;align-items:center;justify-content:center;">
-  <div style="width:90%;max-width:900px;height:90%;background:#fff;border-radius:10px;overflow:hidden;display:flex;flex-direction:column;">
+  <div style="width:90%;max-width:900px;height:90%;background:#fff;border-radius:10px;overflow:auto;display:flex;flex-direction:column;">
     <div style="padding:8px 12px;background:#f3f5f7;display:flex;align-items:center;justify-content:space-between;">
-      <div style="font-weight:600">PDF Viewer</div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <button id="pdfPrev" class="btn ghost" style="padding:6px 10px">Prev</button>
-        <button id="pdfNext" class="btn ghost" style="padding:6px 10px">Next</button>
-        <button id="pdfClose" class="btn ghost" style="padding:6px 10px">Close</button>
-      </div>
+      <div style="font-weight:600">Viewer</div>
+      <div><button id="pdfClose" class="btn ghost" style="padding:6px 10px">Close</button></div>
     </div>
-
-    <div style="flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;padding:12px;background:#eee">
-      <canvas id="pdfCanvas" style="max-width:100%;box-shadow:0 8px 24px rgba(0,0,0,0.12)"></canvas>
-    </div>
-
-    <div style="padding:8px 12px;background:#fff;border-top:1px solid #eee;text-align:right;font-size:13px;color:#444">
-      <span id="pdfPageInfo">Page 0 / 0</span>
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:12px;background:#eee">
+      <iframe id="pdfFrame" style="width:100%;height:100%;border:0;background:white"></iframe>
     </div>
   </div>
 </div>
 
-<script src="https://mozilla.github.io/pdf.js/build/pdf.js"></script>
 <script>
-  const pdfOverlay = document.getElementById('pdfOverlay');
-  const pdfCanvas = document.getElementById('pdfCanvas');
-  const pdfCtx = pdfCanvas.getContext('2d');
-  const pdfPageInfo = document.getElementById('pdfPageInfo');
-  let pdfDoc = null, currentPage = 1, totalPages = 0, pdfScale = 1.2;
-
-  async function openPdf(url){
-    pdfOverlay.style.display='flex';
-    const loadingTask = pdfjsLib.getDocument(url);
-    pdfDoc = await loadingTask.promise;
-    totalPages = pdfDoc.numPages;
-    currentPage = 1;
-    renderPage(currentPage);
-  }
-
-  async function renderPage(num){
-    const page = await pdfDoc.getPage(num);
-    const viewport = page.getViewport({ scale: pdfScale });
-
-    pdfCanvas.width = viewport.width;
-    pdfCanvas.height = viewport.height;
-
-    await page.render({
-      canvasContext: pdfCtx,
-      viewport
-    }).promise;
-
-    pdfPageInfo.textContent=`Page ${num} / ${totalPages}`;
-  }
-
-  pdfPrev.onclick=()=>{ if(currentPage>1){ currentPage--; renderPage(currentPage); } };
-  pdfNext.onclick=()=>{ if(currentPage<totalPages){ currentPage++; renderPage(currentPage); } };
-  pdfClose.onclick=()=>{ pdfOverlay.style.display='none'; pdfDoc=null; };
+  // simple iframe-based viewer
+  function openPdfInOverlay(url){ document.getElementById('pdfFrame').src = url; document.getElementById('pdfOverlay').style.display='flex'; }
+  document.getElementById('pdfClose').addEventListener('click', ()=>{ document.getElementById('pdfOverlay').style.display='none'; document.getElementById('pdfFrame').src = ''; });
+  // override openPdf to use overlay
+  function openPdf(url){ openPdfInOverlay(url); }
 </script>
 
 </body>
