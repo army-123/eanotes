@@ -1,8 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EA Notes - Folder & Login Version</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 0;
+      transition: 0.3s;
+    }
+    body.dark {
+      background: #121212;
+      color: #ddd;
+    }
+
+    .login-container, .app-container {
+      max-width: 600px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+    body.dark .card {
+      background: #1f1f1f;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: black;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    body.dark button {
+      background: #333;
+    }
+
+    select, input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+    }
+    body.dark select,
+    body.dark input {
+      background: #2a2a2a;
+      color: #ddd;
+      border: 1px solid #555;
+    }
+
+    .file-item {
+      background: #eee;
+      padding: 12px;
+      border-radius: 10px;
+      margin-top: 10px;
+      position: relative;
+    }
+    body.dark .file-item {
+      background: #2b2b2b;
+    }
+
+    .delete-btn {
+      position: absolute;
+      right: 10px;
+      top: 10px;
+      background: red;
+      color: white;
+      border: none;
+      padding: 4px 6px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- LOGIN PAGE -->
+<div id="loginPage" class="login-container">
+  <div class="card">
+    <h2>Login</h2>
+    <input id="username" placeholder="Enter username" />
+    <input id="password" type="password" placeholder="Enter password" />
+    <button onclick="login()">Login</button>
+    <button onclick="toggleDark()">🌙 Toggle Dark Mode</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="appPage" class="app-container" style="display:none;">
+  <div class="card">
+    <h2>EA Notes</h2>
+
+    <select id="folderSelect" onchange="loadFiles()">
+      <option value="Anatomy">Anatomy</option>
+      <option value="History">History</option>
+      <option value="Inclusiveness">Inclusiveness</option>
+      <option value="Civics">Civics</option>
+      <option value="Global affairs">Global affairs</option>
+      <option value="Geography">Geography</option>
+      <option value="Psychology">Psychology</option>
+    </select>
+
+    <input type="file" id="fileUpload" onchange="uploadFile()" />
+
+    <h3>Uploaded Files</h3>
+    <div id="fileList"></div>
+
+    <button onclick="logout()" style="background:red;">Logout</button>
+    <button onclick="toggleDark()">🌙 Toggle Dark Mode</button>
+  </div>
+</div>
+
 <script>
+  /* INITIAL LOAD */
   window.onload = () => {
     if (localStorage.getItem('darkMode') === 'true') {
       document.body.classList.add('dark');
     }
+
     if (localStorage.getItem('loggedIn') === 'true') {
       showApp();
     }
@@ -13,21 +142,21 @@
     localStorage.setItem('darkMode', document.body.classList.contains('dark'));
   }
 
-  /* LOGIN SYSTEM */
+  /* LOGIN */
   function login() {
-    const user = document.getElementById("username").value;
+    const user = document.getElementById("username").value.trim();
     const pass = document.getElementById("password").value;
 
     if (pass === "@teacher123") {
       localStorage.setItem("role", "teacher");
       localStorage.setItem("loggedIn", "true");
       showApp();
-    } 
-    else if (pass === "@armyamanu" && user.trim() !== "") {
+    }
+    else if (pass === "@armyamanu" && user !== "") {
       localStorage.setItem("role", "student");
       localStorage.setItem("loggedIn", "true");
       showApp();
-    } 
+    }
     else {
       alert("Incorrect name or password");
     }
@@ -39,23 +168,24 @@
     location.reload();
   }
 
+  /* SHOW MAIN APP */
   function showApp() {
     document.getElementById("loginPage").style.display = "none";
     document.getElementById("appPage").style.display = "block";
 
     const role = localStorage.getItem("role");
-    const upload = document.getElementById("fileUpload");
+    const fileInput = document.getElementById("fileUpload");
 
     if (role === "student") {
-      upload.style.display = "none";
+      fileInput.style.display = "none";  // Hide upload for students
     } else {
-      upload.style.display = "block";
+      fileInput.style.display = "block"; // Show upload for teacher
     }
 
     loadFiles();
   }
 
-  /* FILE SYSTEM */
+  /* FILE UPLOAD */
   function uploadFile() {
     const folder = document.getElementById("folderSelect").value;
     const file = document.getElementById("fileUpload").files[0];
@@ -63,49 +193,58 @@
 
     const reader = new FileReader();
 
-    reader.onload = function(e) {
-      const data = {
+    reader.onload = function (e) {
+      const fileData = {
         name: file.name,
         size: file.size,
         content: e.target.result
       };
 
-      const storageKey = `folder_${folder}`;
-      const files = JSON.parse(localStorage.getItem(storageKey) || "[]");
-      files.push(data);
-      localStorage.setItem(storageKey, JSON.stringify(files));
+      const key = `folder_${folder}`;
+      const files = JSON.parse(localStorage.getItem(key) || "[]");
+
+      files.push(fileData);
+      localStorage.setItem(key, JSON.stringify(files));
+
       loadFiles();
     };
 
     reader.readAsDataURL(file);
   }
 
+  /* DISPLAY FILES */
   function loadFiles() {
     const folder = document.getElementById("folderSelect").value;
-    const storageKey = `folder_${folder}`;
-    const files = JSON.parse(localStorage.getItem(storageKey) || "[]");
+    const key = `folder_${folder}`;
+    const files = JSON.parse(localStorage.getItem(key) || "[]");
 
     const list = document.getElementById("fileList");
     list.innerHTML = "";
 
-    files.forEach((f, i) => {
+    files.forEach((file, index) => {
       list.innerHTML += `
-        <div class='file-item'>
-          <b>${f.name}</b><br>
-          <small>${(f.size / 1024).toFixed(2)} KB</small><br><br>
-          <button disabled style='opacity:0.5; cursor:not-allowed;'>View Only</button>
-          <button class='delete-btn' onclick='deleteFile(${i})'>X</button>
+        <div class="file-item">
+          <b>${file.name}</b><br>
+          <small>${(file.size / 1024).toFixed(2)} KB</small><br><br>
+          <button disabled style="opacity:0.5; cursor:not-allowed;">View Only</button>
+          <button class="delete-btn" onclick="deleteFile(${index})">X</button>
         </div>
       `;
     });
   }
 
+  /* DELETE FILE */
   function deleteFile(i) {
     const folder = document.getElementById("folderSelect").value;
-    const storageKey = `folder_${folder}`;
-    const files = JSON.parse(localStorage.getItem(storageKey) || "[]");
+    const key = `folder_${folder}`;
+
+    const files = JSON.parse(localStorage.getItem(key) || "[]");
     files.splice(i, 1);
-    localStorage.setItem(storageKey, JSON.stringify(files));
+
+    localStorage.setItem(key, JSON.stringify(files));
     loadFiles();
   }
 </script>
+
+</body>
+</html>
