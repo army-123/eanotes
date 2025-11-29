@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EA Notes Cloud</title>
 
-  <!-- Firebase v8 -->
+  <!-- Firebase v8 CDN -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
@@ -71,8 +71,6 @@
 
     #mainArea { display:none; }
 
-    #fileList { margin-top:20px; }
-
     .file-row {
       display:flex;
       justify-content:space-between;
@@ -102,9 +100,7 @@
       animation:spin .8s linear infinite;
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg);}
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     /* PDF Viewer */
     #pdfOverlay {
@@ -128,7 +124,7 @@
 
     iframe { flex:1; border:0; }
 
-    /* Upload Progress UI */
+    /* Turbo upload progress */
     #uploadProgressContainer {
       display:none;
       margin-top:15px;
@@ -144,7 +140,6 @@
       border-radius:10px;
       transition:width 0.2s;
     }
-
   </style>
 </head>
 
@@ -165,7 +160,7 @@
     <label>Teacher Email OR Student Name</label>
     <input id="username" type="text">
 
-    <label>Password (Teacher only)</label>
+    <label>Password</label>
     <input id="password" type="password">
 
     <button id="btnLogin" class="btn primary" style="margin-top:10px;width:100%;">Login</button>
