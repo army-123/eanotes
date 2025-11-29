@@ -1,80 +1,43 @@
-body {
-    margin: 0;
-    padding: 0;
-    background: #0e1f24;
-    font-family: Arial, sans-serif;
+/* ==============================
+   LIGHT MODE (SAFE MINIMAL FIX)
+   ============================== */
+
+.light body {
+    background: #ffffff;
+    color: #000000;
+}
+
+.light .card {
+    background: #f3f3f3;
+    color: #000000;
+}
+
+.light input,
+.light select {
+    background: #ffffff;
+    color: #000000;
+}
+
+.light button {
+    background: #0bb89c;
+    color: #000000;
+}
+
+.light .file-item,
+.light .progress-box {
+    background: #e6e6e6;
+    color: #000000;
+}
+
+.light .progress-bar {
+    background: #0bb89c;
+}
+
+.light .deleteBtn {
+    background: #ff5c5c;
     color: white;
 }
 
-.card {
-    width: 90%;
-    max-width: 420px;
-    margin: 40px auto;
-    padding: 20px;
-    background: #1d3a41;
-    border-radius: 10px;
-    text-align: center;
-}
-
-.hidden { display: none; }
-
-input, select {
-    width: 100%;
-    padding: 12px;
-    margin: 10px 0;
-    border-radius: 6px;
-    border: none;
-}
-
-button {
-    width: 100%;
-    padding: 12px;
-    background: #11c6aa;
-    border: none;
-    border-radius: 6px;
-    color: black;
-    font-weight: bold;
-}
-
-.file-list { margin-top: 20px; text-align: left; }
-
-.file-item {
-    background: #26464d;
-    padding: 12px;
-    margin-bottom: 8px;
-    border-radius: 6px;
-    display: flex;
-    justify-content: space-between;
-}
-
-.deleteBtn {
-    background: #e64343;
-    padding: 6px 10px;
-    border-radius: 6px;
-    border: none;
-    color: white;
-}
-
-.logout { background: #d9534f; }
-
-/* Upload progress */
-.progress-box {
-    padding: 12px;
-    background: #26464d;
-    border-radius: 6px;
-    margin-bottom: 10px;
-}
-
-.progress-bar {
-    height: 8px;
-    width: 0%;
-    background: #1ad4f7;
-    border-radius: 4px;
-    transition: width 0.2s;
-}
-
-.progress-text {
-    font-size: 12px;
-    margin-top: 6px;
-    color: #ccc;
+.light .logout {
+    background: #ff4747;
 }
