@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EA Notes - Folder & Login Version</title>
+  <title>EA Notes</title>
 
   <style>
     body {
@@ -177,15 +177,15 @@
     const fileInput = document.getElementById("fileUpload");
 
     if (role === "student") {
-      fileInput.style.display = "none";  // Hide upload for students
+      fileInput.style.display = "none";  
     } else {
-      fileInput.style.display = "block"; // Show upload for teacher
+      fileInput.style.display = "block";
     }
 
     loadFiles();
   }
 
-  /* FILE UPLOAD */
+  /* UPLOAD FILE */
   function uploadFile() {
     const folder = document.getElementById("folderSelect").value;
     const file = document.getElementById("fileUpload").files[0];
@@ -206,20 +206,22 @@
       files.push(fileData);
       localStorage.setItem(key, JSON.stringify(files));
 
+      document.getElementById("fileUpload").value = ""; 
       loadFiles();
     };
 
     reader.readAsDataURL(file);
   }
 
-  /* DISPLAY FILES */
+  /* LOAD FILES PER SUBJECT */
   function loadFiles() {
     const folder = document.getElementById("folderSelect").value;
     const key = `folder_${folder}`;
-    const files = JSON.parse(localStorage.getItem(key) || "[]");
 
+    const files = JSON.parse(localStorage.getItem(key) || "[]");
     const list = document.getElementById("fileList");
-    list.innerHTML = "";
+
+    list.innerHTML = ""; 
 
     files.forEach((file, index) => {
       list.innerHTML += `
