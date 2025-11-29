@@ -150,8 +150,11 @@
           <option>Psychology</option>
         </select>
 
-        <label for="fileUpload" class="btn ghost">📤 Upload</label>
-        <input id="fileUpload" type="file" style="display:none" />
+        <!-- Upload visible only for teacher -->
+        <div id="uploadSection" style="display:none;">
+          <label for="fileUpload" class="btn ghost">📤 Upload</label>
+          <input id="fileUpload" type="file" style="display:none" />
+        </div>" type="file" style="display:none" />
       </div>
 
       <div class="file-list card" style="padding:12px">
@@ -189,6 +192,9 @@ function login(){
   appCard.style.display = "block";
   userRole.textContent = currentRole;
   loadFiles();
+  
+  // Show upload only for teacher
+  document.getElementById('uploadSection').style.display = (currentRole === "teacher") ? "block" : "none";
 }
 
 function logout(){ location.reload(); }
