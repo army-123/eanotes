@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>EA Notes — Modern</title>
+  <title>EA Notes — Local Version</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 
@@ -107,10 +107,6 @@
     .file-small{font-size:12px;color:var(--muted)}
     .actions{display:flex; gap:8px;align-items:center}
 
-    /* hide teacher/student password hint */
-    .password-hint{
-      display:none !important;
-    }
   </style>
 </head>
 <body>
@@ -119,8 +115,8 @@
     <div class="brand">
       <div class="logo">EA</div>
       <div>
-        <h1>EA Notes</h1>
-        <div class="sub">Smarter notes • Cloud backed</div>
+        <h1>EA Notes (Offline)</h1>
+        <div class="sub">Local storage version</div>
       </div>
     </div>
     <div style="display:flex;gap:8px;align-items:center">
@@ -129,100 +125,144 @@
   </header>
 
   <main>
-    <!-- LOGIN CARD -->
     <div id="loginCard" class="card">
       <label class="small">Username</label>
-      <input id="username" type="text" placeholder="Your name (required for student)" />
+      <input id="username" type="text" placeholder="Your name" />
 
       <label class="small" style="margin-top:10px">Password</label>
       <input id="password" type="password" placeholder="Enter password" />
 
-      <div style="height:10px"></div>
-
-      <div class="row">
-        <button class="btn" id="btnLogin" onclick="appLogin()">Login</button>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" onclick="login()">Login</button>
         <button class="btn ghost" onclick="toggleDark()">🌙</button>
       </div>
-
-      <!-- PASSWORD HINT HIDDEN -->
-      <small class="hint password-hint">Teacher password: <b>@teacher123</b> • Student password: <b>@armyamanu</b></small>
     </div>
 
-    <!-- APP CARD -->
     <div id="appCard" class="card" style="display:none">
       <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px">
-        <select id="folderSelect" onchange="loadFiles()" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(12,34,70,0.06)">
-          <option value="Anatomy">Anatomy</option>
-          <option value="History">History</option>
-          <option value="Inclusiveness">Inclusiveness</option>
-          <option value="Civics">Civics</option>
-          <option value="Global affairs">Global affairs</option>
-          <option value="Geography">Geography</option>
-          <option value="Psychology">Psychology</option>
+        <select id="folderSelect" onchange="loadFiles()">
+          <option>Anatomy</option>
+          <option>History</option>
+          <option>Inclusiveness</option>
+          <option>Civics</option>
+          <option>Global affairs</option>
+          <option>Geography</option>
+          <option>Psychology</option>
         </select>
 
-        <label for="fileUpload" class="btn ghost" style="padding:8px 10px;margin:0;cursor:pointer">📤 Upload</label>
+        <label for="fileUpload" class="btn ghost">📤 Upload</label>
         <input id="fileUpload" type="file" style="display:none" />
       </div>
 
-      <div class="file-list card" id="fileListContainer" style="padding:12px">
-        <div id="fileList" class="file-list"></div>
+      <div class="file-list card" style="padding:12px">
+        <div id="fileList"></div>
       </div>
 
       <div style="display:flex;gap:10px;margin-top:12px">
-        <button class="btn danger" onclick="appLogout()">Logout</button>
+        <button class="btn danger" onclick="logout()">Logout</button>
         <button class="btn ghost" onclick="toggleDark()">Theme</button>
       </div>
     </div>
   </main>
-
-  <footer>EA Notes • Cloud preview • Built for students & teachers</footer>
 </div>
 
-<!-- Firebase & scripts remain unchanged except passwords removed from UI -->
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
-
 <script>
-// passwords remain in JS — but hidden from UI
+let currentRole = null;
+let filesDB = JSON.parse(localStorage.getItem("eanotes_files") || "{}");
+
 const TEACHER_PASS = "@teacher123";
 const STUDENT_PASS = "@armyamanu";
 
-const firebaseConfig = {
-  apiKey: "REPLACE_WITH_YOUR_API_KEY",
-  authDomain: "REPLACE_WITH_PROJECT.firebaseapp.com",
-  projectId: "REPLACE_WITH_PROJECT",
-  storageBucket: "REPLACE_WITH_PROJECT.appspot.com",
-  messagingSenderId: "SENDER_ID",
-  appId: "APP_ID"
+function saveDB(){
+  localStorage.setItem("eanotes_files", JSON.stringify(filesDB));
+}
+
+function login(){
+  const name = username.value.trim();
+  const pass = password.value.trim();
+
+  if(pass === TEACHER_PASS){ currentRole = "teacher"; }
+  else if(pass === STUDENT_PASS && name !== ""){ currentRole = "student"; }
+  else{ alert("Incorrect password"); return; }
+
+  loginCard.style.display = "none";
+  appCard.style.display = "block";
+  userRole.textContent = currentRole;
+  loadFiles();
+}
+
+function logout(){ location.reload(); }
+
+fileUpload.onchange = (e)=>{
+  if(currentRole !== "teacher"){ alert("Only teachers can upload."); return; }
+
+  const file = e.target.files[0];
+  if(!file) return;
+
+  const subject = folderSelect.value;
+
+  if(!filesDB[subject]) filesDB[subject] = [];
+
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    filesDB[subject].unshift({
+      name: file.name,
+      size: file.size,
+      data: reader.result,
+      time: Date.now(),
+    });
+    saveDB();
+    loadFiles();
+  };
+  reader.readAsDataURL(file);
 };
 
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-const storage = firebase.storage();
+function loadFiles(){
+  const subject = folderSelect.value;
+  const list = document.getElementById("fileList");
+  list.innerHTML = "";
 
-let currentUser = null;
-let currentRole = null;
+  const subjectFiles = filesDB[subject] || [];
 
-function appLogin(){
-  const name = document.getElementById('username').value.trim();
-  const pass = document.getElementById('password').value.trim();
-
-  if (pass === TEACHER_PASS || (pass === STUDENT_PASS && name !== "")) {
-    auth.signInAnonymously().then(result => {
-      const uid = result.user.uid;
-      const role = (pass === TEACHER_PASS) ? "teacher" : "student";
-      db.collection('users').doc(uid).set({ name, role }, { merge:true });
-      currentUser = result.user;
-      currentRole = role;
-      postLoginUI();
-    });
-  } else {
-    alert("Incorrect name or password");
+  if(subjectFiles.length === 0){
+    list.innerHTML = `<div class='muted'>No files added.</div>`;
+    return;
   }
+
+  subjectFiles.forEach((f, i)=>{
+    const row = document.createElement("div");
+    row.className = "file-row";
+    row.innerHTML = `
+      <div class='file-meta'>
+        <div class='file-name'>${f.name}</div>
+        <div class='file-small'>${(f.size/1024).toFixed(2)} KB</div>
+      </div>
+      <div class='actions'>
+        <button class='btn ghost' onclick='viewFile("${subject}",${i})'>View</button>
+        ${currentRole === "teacher" ? `<button class='btn ghost' onclick='deleteFile("${subject}",${i})'>Delete</button>` : ""}
+      </div>
+    `;
+    list.appendChild(row);
+  });
+}
+
+function viewFile(subject, index){
+  const file = filesDB[subject][index];
+  const win = window.open();
+  win.document.write(`<iframe style='width:100%;height:100%' src='${file.data}'></iframe>`);
+}
+
+function deleteFile(subject, index){
+  if(!confirm("Delete file?")) return;
+  filesDB[subject].splice(index,1);
+  saveDB();
+  loadFiles();
+}
+
+function toggleDark(){
+  document.body.style.background = (document.body.style.background.includes("0f17")) ?
+    "linear-gradient(180deg,#e6eefc,#f7fbff)"
+    : "linear-gradient(180deg,#0f1724,#0b233f)";
 }
 </script>
 </body>
