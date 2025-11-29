@@ -152,8 +152,13 @@
 
         <!-- Upload visible only for teacher -->
         <div id="uploadSection" style="display:none;">
-          <label for="fileUpload" class="btn ghost">📤 Upload</label>
-          <input id="fileUpload" type="file" style="display:none" />
+          <div id="uploadSection" style="display:none;">
+  <label for="fileUpload" class="btn ghost" style="padding:8px 14px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
+    📤 <span>Upload</span>
+  </label>
+  <input id="fileUpload" type="file" style="display:none" />
+</div>
+" type="file" style="display:none" />
         </div>" type="file" style="display:none" />
       </div>
 
@@ -244,7 +249,7 @@ function loadFiles(){
         <div class='file-small'>${(f.size/1024).toFixed(2)} KB</div>
       </div>
       <div class='actions'>
-        <button class='btn ghost view-btn' onclick='viewFile("${subject}",${i})'>View</button>
+        <button class='btn ghost view-btn' style='background:#0b69ff;color:white;padding:8px 14px;border-radius:8px;font-weight:600;' onclick='viewFile("${subject}",${i})'>View</button>
         ${currentRole === "teacher" ? `<button class='btn ghost delete-btn' onclick='deleteFile("${subject}",${i})'>Delete</button>` : ""}
       </div>
     `;
