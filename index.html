@@ -1,236 +1,206 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EA Notes Cloud – Login</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EA Notes Cloud</title>
+
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
 <style>
-:root {
-    --bg: #111;
-    --card: rgba(255,255,255,0.06);
-    --text: #fff;
-    --input-bg: rgba(255,255,255,0.12);
-    --button: #4a90e2;
-    --button-hover: #357abd;
+:root{
+  --bg:#0f1724; --card:#0b1220; --text:#e6eefc; --muted:#9aa8c7; --accent:#3b82f6;
+}
+body.light{
+  --bg:#f6f8ff; --card:#ffffff; --text:#0b1220; --muted:#6b7280; --accent:#2563eb;
 }
 
-/* Light Mode */
-.light {
-    --bg: #f7f7f7;
-    --card: rgba(0,0,0,0.05);
-    --text: #111;
-    --input-bg: rgba(0,0,0,0.08);
-    --button: #333;
-    --button-hover: #000;
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:Inter, Arial;
+  padding:20px;
 }
 
-body {
-    margin: 0;
-    height: 100vh;
-    background: var(--bg);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-family: "Poppins", sans-serif;
-    transition: 0.3s;
+.container{
+  max-width:950px;
+  margin:auto;
+  background:var(--card);
+  padding:20px;
+  border-radius:12px;
+  box-shadow:0 8px 25px rgba(0,0,0,0.3);
 }
 
-.card {
-    width: 340px;
-    padding: 28px;
-    border-radius: 16px;
-    background: var(--card);
-    backdrop-filter: blur(20px);
-    box-shadow: 0 0 20px rgba(0,0,0,0.4);
-    color: var(--text);
-    animation: fadeIn 0.8s ease;
+h1{ margin:0 0 6px 0; }
+.muted{ color:var(--muted); }
+
+input,select{
+  width:100%;
+  padding:10px;
+  margin-top:8px;
+  background:#ffffff10;
+  color:var(--text);
+  border:1px solid #233142;
+  border-radius:10px;
 }
 
-.card h2 {
-    margin-bottom: 5px;
+button{
+  padding:10px 12px;
+  border-radius:10px;
+  border:0;
+  cursor:pointer;
+  font-weight:600;
 }
 
-select, input {
-    width: 94%;
-    padding: 12px;
-    margin: 8px 0;
-    border-radius: 10px;
-    border: none;
-    outline: none;
-    background: var(--input-bg);
-    color: var(--text);
+.primary{ background:var(--accent); color:white; }
+.ghost{ background:transparent; border:1px solid var(--accent); color:var(--accent); }
+.danger{ background:#dc2626; color:white; }
+
+.row{ display:flex; gap:10px; align-items:center; margin-top:12px; }
+
+.section{
+  margin-top:20px;
+  padding:15px;
+  background:#ffffff10;
+  border-radius:10px;
 }
 
-button {
-    margin-top: 10px;
-    width: 100%;
-    padding: 12px;
-    border-radius: 10px;
-    border: none;
-    background: var(--button);
-    color: white;
-    font-size: 16px;
-    cursor: pointer;
+.fileRow{
+  display:flex;
+  justify-content:space-between;
+  background:#ffffff15;
+  padding:10px;
+  border-radius:10px;
+  margin-top:10px;
 }
 
-button:hover {
-    background: var(--button-hover);
+#loadingOverlay{
+  display:none;
+  position:fixed; inset:0;
+  background:rgba(0,0,0,0.5);
+  z-index:9999;
+  align-items:center;
+  justify-content:center;
 }
 
-.theme-toggle {
-    text-align: center;
-    margin-bottom: 10px;
-    cursor: pointer;
-    font-size: 14px;
-    color: var(--text);
-    opacity: 0.8;
+.spinner{
+  width:60px;height:60px;
+  border:6px solid #ffffff30;
+  border-top-color:white;
+  border-radius:50%;
+  animation:spin .8s linear infinite;
 }
+@keyframes spin{ to{ transform:rotate(360deg); } }
 
-#msg {
-    margin-top: 10px;
-    color: #ff5555;
-    min-height: 20px;
-    font-size: 14px;
+#pdfOverlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:9998;
+  background:rgba(0,0,0,0.85);
+  align-items:center;
+  justify-content:center;
 }
+#pdfBox{
+  background:white;
+  width:90%; height:90%;
+  display:flex;
+  flex-direction:column;
+  border-radius:12px;
+}
+#pdfFrame{ flex:1; border:0; }
 
-/* Loading Overlay */
-#loading {
-    position: fixed;
-    width: 100%;
-    height: 100%;
-    display: none;
-    justify-content: center;
-    align-items: center;
-    backdrop-filter: blur(6px);
-    background: rgba(0,0,0,0.5);
-}
-
-.spinner {
-    width: 60px;
-    height: 60px;
-    border: 6px solid rgba(255,255,255,0.3);
-    border-top: 6px solid #4a90e2;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
- 100% { transform: rotate(360deg); }
-}
-
-@keyframes fadeIn {
- from {opacity:0;} to {opacity:1;}
-}
 </style>
 </head>
 <body>
 
-<!-- LOADING -->
-<div id="loading"><div class="spinner"></div></div>
+<div id="loadingOverlay"><div class="spinner"></div></div>
 
-<div class="card">
-    <div class="theme-toggle" onclick="toggleTheme()">🌙 / ☀️ Theme</div>
+<div class="container">
 
-    <h2>EA Notes Cloud</h2>
-    <p>Login to continue</p>
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <div>
+      <h1>EA Notes Cloud</h1>
+      <div class="muted">Upload and access notes easily</div>
+    </div>
+    <button id="themeToggle" class="ghost">🌙</button>
+  </div>
 
-    <select id="role" onchange="switchRole()">
-        <option value="student">Student</option>
-        <option value="teacher">Teacher</option>
+  <!-- LOGIN SECTION -->
+  <div class="section">
+    <h3>Login</h3>
+
+    <label>Role</label>
+    <select id="roleSelect">
+      <option value="student">Student</option>
+      <option value="teacher">Teacher</option>
     </select>
 
-    <input type="text" id="username" placeholder="Username">
-    <input type="password" id="password" placeholder="Password">
+    <label id="labelUser">Student Name</label>
+    <input id="username" placeholder="Student name or teacher email">
 
-    <button onclick="login()">Login</button>
+    <label>Password</label>
+    <input type="password" id="password" placeholder="Students use @armyamanu">
 
-    <div id="msg"></div>
+    <div class="row">
+      <button id="loginBtn" class="primary" style="flex:1">Login</button>
+      <button id="quickBtn" class="ghost">Quick</button>
+    </div>
+
+    <div id="loginMsg" class="muted" style="margin-top:6px;"></div>
+
+    <button id="logoutBtn" class="danger" style="margin-top:10px;display:none;">Logout</button>
+  </div>
+
+  <!-- UPLOAD SECTION -->
+  <div class="section" id="uploadSection" style="display:none;">
+    <h3>Upload PDF</h3>
+
+    <label>Subject</label>
+    <select id="subjectSelect">
+      <option>Anatomy</option>
+      <option>History</option>
+      <option>Geography</option>
+      <option>Psychology</option>
+      <option>Mathematics</option>
+    </select>
+
+    <div class="row">
+      <label for="fileInput" class="ghost" style="cursor:pointer;">Choose File</label>
+      <input id="fileInput" type="file" accept="application/pdf" style="display:none;">
+      <button id="uploadBtn" class="primary">Upload</button>
+    </div>
+
+    <div id="uploadProgress" style="display:none;margin-top:10px;">
+      <div class="muted">Uploading... <span id="uploadPercent">0%</span></div>
+    </div>
+  </div>
+
+  <!-- FILE LIST -->
+  <div class="section">
+    <h3>Files</h3>
+
+    <input id="searchInput" placeholder="Search name...">
+
+    <div id="fileList" style="margin-top:12px;"></div>
+  </div>
+
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- PDF VIEWER -->
+<div id="pdfOverlay">
+  <div id="pdfBox">
+    <div style="padding:10px;display:flex;justify-content:space-between;">
+      <div id="pdfTitle"></div>
+      <button id="closePdf" class="primary">Close</button>
+    </div>
+    <iframe id="pdfFrame"></iframe>
+  </div>
+</div>
 
-<script>
-const supabase = supabase.createClient(
-    "https://hlstgluwamsuuqlctdzk.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhsc3RnbHV3YW1zdXVxbGN0ZHprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyNzMwMzQsImV4cCI6MjA3OTg0OTAzNH0.KUPx3pzrcd3H5aEx2B7mFosWNUVOEzXDD5gL-TmyawQ"
-);
-
-const loader = document.getElementById("loading");
-const msg = document.getElementById("msg");
-
-function switchRole() {
-    const role = document.getElementById("role").value;
-    const user = document.getElementById("username");
-
-    if (role === "teacher") {
-        user.placeholder = "Email";
-    } else {
-        user.placeholder = "Student Name";
-    }
-}
-
-function toggleTheme() {
-    document.body.classList.toggle("light");
-}
-
-document.addEventListener("keyup", e => {
-    if (e.key === "Enter") login();
-});
-
-async function login() {
-    msg.textContent = "";
-    loader.style.display = "flex";
-
-    const role = document.getElementById("role").value;
-    const username = document.getElementById("username").value.trim();
-    const password = document.getElementById("password").value.trim();
-
-    if (!username || !password) {
-        loader.style.display = "none";
-        msg.textContent = "Please fill all fields.";
-        return;
-    }
-
-    if (role === "teacher") {
-        // TEACHER LOGIN
-        const { error } = await supabase.auth.signInWithPassword({
-            email: username,
-            password: password
-        });
-
-        if (error) {
-            loader.style.display = "none";
-            msg.textContent = error.message;
-            return;
-        }
-
-        window.location.href = "teacher/teacher.html";
-    }
-
-    else {
-        // STUDENT LOGIN
-        if (password !== "@armyamanu") {
-            loader.style.display = "none";
-            msg.textContent = "Incorrect student password!";
-            return;
-        }
-
-        const { data, error } = await supabase
-            .from("students")
-            .select("*")
-            .eq("name", username);
-
-        if (error || data.length === 0) {
-            loader.style.display = "none";
-            msg.textContent = "Student not found!";
-            return;
-        }
-
-        window.location.href = "student/student.html";
-    }
-}
-</script>
+<script src="script.js"></script>
 
 </body>
 </html>
