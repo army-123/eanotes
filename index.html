@@ -1,51 +1,149 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EA Notes Cloud</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>EA Notes Cloud — Supabase</title>
 
-<link rel="stylesheet" href="styles.css">
+  <!-- Supabase client (v2) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
-<!-- Supabase client -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{
+      --bg:#f3f6fb; --card:#ffffff; --text:#0b1220; --muted:#6b7280; --accent:#1d4ed8; --danger:#dc2626;
+    }
+    body.dark{ --bg:#071427; --card:#081426; --text:#e6eefc; --muted:#9aa8c7; --accent:#3b82f6; --danger:#ff6b6b; }
+    *{box-sizing:border-box}
+    body{ margin:0; font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:var(--bg); color:var(--text); display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px; }
+    .app{ width:960px; max-width:100%; background:var(--card); border-radius:12px; padding:20px; box-shadow:0 10px 30px rgba(2,6,23,0.08); }
+    header{ display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px; }
+    h1{ margin:0; font-size:20px; }
+    .muted{ color:var(--muted); font-size:13px; }
 
-<!-- FIXED !!!  -->
-<script src="script.js" defer></script>
+    .grid { display:grid; grid-template-columns: 340px 1fr; gap:18px; }
+    .card { background:transparent; border-radius:10px; padding:12px; }
+
+    /* login card */
+    .login-card { border-radius:12px; padding:18px; background:linear-gradient(180deg, rgba(0,0,0,0.02), transparent); }
+    input, select { width:100%; padding:10px 12px; margin-top:10px; border-radius:8px; border:1px solid #e6e9ef; background: #fff; color:var(--text); }
+    body.dark input { background:#0b1a2a; border:1px solid #123; color:var(--text); }
+    .btn { padding:10px 12px; border-radius:8px; border:0; cursor:pointer; font-weight:600; }
+    .btn-primary{ background:var(--accent); color:white; }
+    .btn-ghost{ background:transparent; border:1px solid var(--accent); color:var(--accent); }
+    .btn-danger{ background:var(--danger); color:white; }
+
+    /* main area */
+    .controls{ display:flex; gap:8px; align-items:center; margin-bottom:10px; }
+    .file-row { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:10px; border-radius:8px; background:#f1f5f9; margin-bottom:10px; }
+    body.dark .file-row { background:#071a2a; }
+
+    /* upload progress */
+    #uploadProgress { display:none; margin-top:12px; }
+    #uploadBar { height:12px; width:0%; background:var(--accent); border-radius:8px; transition:width .2s; }
+
+    /* pdf overlay */
+    #pdfOverlay{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9999; align-items:center; justify-content:center; }
+    #pdfBox{ width:92%; height:92%; background:white; border-radius:8px; display:flex; flex-direction:column; overflow:hidden; }
+    #pdfFrame{ flex:1; border:0; }
+
+    /* loading */
+    #loadingOverlay{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:9998; align-items:center; justify-content:center; }
+    .spinner{ width:56px; height:56px; border:6px solid #ffffff30; border-top-color:white; border-radius:50%; animation:spin .9s linear infinite; }
+    @keyframes spin{ to{ transform:rotate(360deg); } }
+
+    /* responsive */
+    @media(max-width:880px){
+      .grid{ grid-template-columns:1fr; }
+      .login-card{ margin-bottom:12px; }
+    }
+  </style>
 </head>
-
 <body>
 
-<div id="loginBox" class="card">
-    <h2>EA Notes Cloud</h2>
-    <p class="sub">Login to continue</p>
+  <div id="loadingOverlay"><div class="spinner"></div></div>
 
-    <input id="loginName" type="text" placeholder="Your Name">
-    <input id="loginPassword" type="password" placeholder="Password">
+  <div class="app">
+    <header>
+      <div>
+        <h1>EA Notes Cloud</h1>
+        <div class="muted">Upload, view and share notes — Supabase backend</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button id="themeToggle" class="btn btn-ghost">🌙</button>
+        <div id="userRole" class="muted">Not logged in</div>
+      </div>
+    </header>
 
-    <button id="btnLogin">Login</button>
+    <div class="grid">
+      <!-- LEFT: login -->
+      <div class="card login-card">
+        <label><strong>Role</strong></label>
+        <select id="roleSelect">
+          <option value="student">Student</option>
+          <option value="teacher">Teacher</option>
+        </select>
 
-    <p id="loginFeedback" class="feedback"></p>
-</div>
+        <label id="labelUser">Student name</label>
+        <input id="username" type="text" placeholder="Student name or teacher email">
 
-<div id="dashboard" class="card hidden">
-    <h2 id="welcomeText"></h2>
-    <p class="role">Role: <span id="roleTag"></span></p>
+        <label>Password</label>
+        <input id="password" type="password" placeholder="Students use common password">
 
-    <select id="subjectSelect">
-        <option value="Anatomy">Anatomy</option>
-        <option value="History">History</option>
-        <option value="Math">Math</option>
-        <option value="Physics">Physics</option>
-    </select>
+        <div style="display:flex;gap:8px;margin-top:12px;">
+          <button id="loginBtn" class="btn btn-primary" style="flex:1">Login</button>
+          <button id="guestBtn" class="btn btn-ghost" style="width:120px">Quick Student</button>
+        </div>
 
-    <button id="uploadBtn">Upload PDF</button>
-    <input id="realFileInput" type="file" accept="application/pdf" hidden>
+        <div id="loginMsg" class="muted" style="margin-top:10px; min-height:18px;"></div>
 
-    <div id="fileList" class="file-list"></div>
+        <hr style="margin:16px 0">
 
-    <button id="logoutBtn" class="logout">Logout</button>
-</div>
+        <label><strong>Subject</strong></label>
+        <select id="subjectSelect">
+          <option>Anatomy</option><option>History</option><option>Geography</option><option>Psychology</option><option>Mathematics</option>
+        </select>
 
+        <div style="margin-top:10px; display:flex; gap:8px; align-items:center;">
+          <label id="uploadLabel" class="btn btn-ghost" for="fileInput" style="cursor:pointer;">Choose PDF</label>
+          <input id="fileInput" type="file" accept="application/pdf" style="display:none">
+          <button id="logoutBtn" class="btn btn-danger" style="margin-left:auto;">Logout</button>
+        </div>
+
+        <div id="uploadProgress">
+          <div style="display:flex;justify-content:space-between;margin-top:8px;">
+            <div class="muted">Uploading… <span id="uploadPercent">0%</span></div>
+            <div id="uploadStatus" class="muted"></div>
+          </div>
+          <div style="background:#e6efff;border-radius:8px;margin-top:8px;height:12px;"><div id="uploadBar"></div></div>
+        </div>
+      </div>
+
+      <!-- RIGHT: main -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <input id="searchInput" placeholder="Search files by name" style="padding:8px 10px;border-radius:8px;border:1px solid #e6e9ef;width:320px;">
+            <button id="refreshBtn" class="btn btn-ghost" style="margin-left:8px;">Refresh</button>
+          </div>
+          <div class="muted">Files by subject: <strong id="currentSubject">Anatomy</strong></div>
+        </div>
+
+        <div id="fileList" style="margin-top:14px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PDF Viewer -->
+  <div id="pdfOverlay"><div id="pdfBox">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #eee;">
+      <div id="pdfTitle" style="font-weight:700"></div>
+      <div>
+        <button id="closePdfBtn" class="btn btn-primary">Close</button>
+      </div>
+    </div>
+    <iframe id="pdfFrame"></iframe>
+  </div></div>
+
+  <script src="script.js"></script>
 </body>
 </html>
