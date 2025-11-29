@@ -1,252 +1,519 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EA Notes</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>EA Notes — Modern</title>
+
+  <!-- Simple Google font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f5f5f5;
-      margin: 0;
-      padding: 0;
-      transition: 0.3s;
+    :root{
+      --bg: #f4f7fb;
+      --card: rgba(255,255,255,0.9);
+      --glass: rgba(255,255,255,0.6);
+      --muted: #7b8794;
+      --accent: #0b69ff;
+      --danger: #e23b3b;
     }
-    body.dark {
-      background: #121212;
-      color: #ddd;
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:Inter,system-ui,Segoe UI,Roboto,Arial;
+      background: linear-gradient(180deg,#e6eefc 0%, #f7fbff 100%);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
     }
 
-    .login-container, .app-container {
-      max-width: 600px;
-      margin: auto;
-      padding: 20px;
+    /* iPhone-like frame */
+    .app {
+      width:390px;
+      max-width:95%;
+      border-radius:28px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.85));
+      box-shadow: 0 20px 60px rgba(15,30,60,0.12);
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,0.6);
     }
+
+    header{
+      padding:18px 18px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.45), rgba(255,255,255,0.25));
+      border-bottom: 1px solid rgba(0,0,0,0.04);
+    }
+    .brand{
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+    .logo{
+      width:44px;height:44px;border-radius:12px;
+      background:linear-gradient(135deg,var(--accent),#6aa9ff);
+      display:flex;align-items:center;justify-content:center;color:white;font-weight:700;
+      box-shadow:0 6px 18px rgba(11,105,255,0.15);
+      font-size:18px;
+    }
+    h1{font-size:16px;margin:0}
+    .sub{font-size:11px;color:var(--muted);margin-top:2px}
+
+    main{padding:18px}
 
     .card {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.1);
-    }
-    body.dark .card {
-      background: #1f1f1f;
-    }
-
-    button {
-      width: 100%;
-      padding: 12px;
-      background: black;
-      color: white;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-    body.dark button {
-      background: #333;
+      background: var(--card);
+      border-radius:14px;
+      padding:14px;
+      margin-bottom:12px;
+      box-shadow: 0 6px 18px rgba(20,40,90,0.04);
+      border:1px solid rgba(0,0,0,0.03);
     }
 
-    select, input {
-      width: 100%;
-      padding: 12px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      margin-bottom: 10px;
-    }
-    body.dark select,
-    body.dark input {
-      background: #2a2a2a;
-      color: #ddd;
-      border: 1px solid #555;
+    label.small{font-size:12px;color:var(--muted);display:block;margin-bottom:8px}
+    input[type="text"], input[type="password"], select {
+      width:100%;
+      padding:12px 12px;
+      border-radius:10px;
+      border:1px solid rgba(12,34,70,0.06);
+      font-size:14px;
+      background:transparent;
     }
 
-    .file-item {
-      background: #eee;
-      padding: 12px;
-      border-radius: 10px;
-      margin-top: 10px;
-      position: relative;
+    .row{display:flex;gap:10px}
+    .btn {
+      display:inline-block;
+      background:var(--accent);
+      color:white;
+      border:none;
+      padding:10px 12px;
+      border-radius:10px;
+      cursor:pointer;
+      width:100%;
+      font-weight:600;
+      box-shadow: 0 6px 18px rgba(11,105,255,0.14);
     }
-    body.dark .file-item {
-      background: #2b2b2b;
-    }
+    .btn.ghost{background:transparent;color:var(--accent);border:1px solid rgba(11,105,255,0.12);box-shadow:none}
+    .btn.danger{background:var(--danger);box-shadow:none}
+    .muted{color:var(--muted);font-size:13px}
 
-    .delete-btn {
-      position: absolute;
-      right: 10px;
-      top: 10px;
-      background: red;
-      color: white;
-      border: none;
-      padding: 4px 6px;
-      border-radius: 5px;
-      cursor: pointer;
+    /* file list */
+    .file-list{display:flex;flex-direction:column;gap:10px}
+    .file-row{
+      display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.85), rgba(250,250,250,0.85));
+      border:1px solid rgba(0,0,0,0.03);
+    }
+    .file-meta{flex:1}
+    .file-name{font-weight:600}
+    .file-small{font-size:12px;color:var(--muted)}
+    .actions{display:flex; gap:8px;align-items:center}
+
+    /* preview modal */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:999}
+    .modal{width:92%;max-width:760px;background:white;border-radius:12px;padding:12px}
+    .modal .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    iframe.preview, img.preview, video.preview, pre.preview{width:100%;height:520px;border-radius:8px;background:#f6f7fb}
+    pre.preview{padding:12px;overflow:auto;height:480px}
+
+    footer{padding:12px;text-align:center;font-size:12px;color:var(--muted)}
+    small.hint{color:var(--muted);font-size:12px;display:block;margin-top:8px;text-align:center}
+
+    /* responsive */
+    @media (max-width:420px){
+      .app{width:100%;border-radius:18px}
+      iframe.preview, img.preview, video.preview, pre.preview{height:320px}
     }
   </style>
 </head>
-
 <body>
 
-<!-- LOGIN PAGE -->
-<div id="loginPage" class="login-container">
-  <div class="card">
-    <h2>Login</h2>
-    <input id="username" placeholder="Enter username" />
-    <input id="password" type="password" placeholder="Enter password" />
-    <button onclick="login()">Login</button>
-    <button onclick="toggleDark()">🌙 Toggle Dark Mode</button>
+<div class="app" role="application">
+  <header>
+    <div class="brand">
+      <div class="logo">EA</div>
+      <div>
+        <h1>EA Notes</h1>
+        <div class="sub">Smarter notes • Cloud backed</div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;align-items:center">
+      <div id="userRole" class="muted">Not logged in</div>
+    </div>
+  </header>
+
+  <main>
+    <!-- LOGIN CARD -->
+    <div id="loginCard" class="card">
+      <label class="small">Username</label>
+      <input id="username" type="text" placeholder="Your name (required for student)" />
+
+      <label class="small" style="margin-top:10px">Password</label>
+      <input id="password" type="password" placeholder="Enter password" />
+
+      <div style="height:10px"></div>
+
+      <div class="row">
+        <button class="btn" id="btnLogin" onclick="appLogin()">Login</button>
+        <button class="btn ghost" onclick="toggleDark()">🌙</button>
+      </div>
+
+      <small class="hint">Teacher password: <b>@teacher123</b> • Student password: <b>@armyamanu</b></small>
+    </div>
+
+    <!-- APP CARD (hidden until login) -->
+    <div id="appCard" class="card" style="display:none">
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px">
+        <select id="folderSelect" onchange="loadFiles()" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(12,34,70,0.06)">
+          <option value="Anatomy">Anatomy</option>
+          <option value="History">History</option>
+          <option value="Inclusiveness">Inclusiveness</option>
+          <option value="Civics">Civics</option>
+          <option value="Global affairs">Global affairs</option>
+          <option value="Geography">Geography</option>
+          <option value="Psychology">Psychology</option>
+        </select>
+
+        <label for="fileUpload" class="btn ghost" style="padding:8px 10px;margin:0;cursor:pointer">📤 Upload</label>
+        <input id="fileUpload" type="file" style="display:none" />
+      </div>
+
+      <div class="file-list card" id="fileListContainer" style="padding:12px">
+        <div id="fileList" class="file-list">
+          <!-- files will be injected here -->
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:12px">
+        <button class="btn danger" onclick="appLogout()">Logout</button>
+        <button class="btn ghost" onclick="toggleDark()">Theme</button>
+      </div>
+    </div>
+  </main>
+
+  <footer>EA Notes • Cloud preview • Built for students & teachers</footer>
+</div>
+
+<!-- Preview modal -->
+<div id="previewBackdrop" class="modal-backdrop" style="display:none" onclick="closePreview(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="toolbar">
+      <div id="previewTitle" style="font-weight:600"></div>
+      <div><button class="btn ghost" onclick="closePreview()">Close</button></div>
+    </div>
+    <div id="previewBody"></div>
   </div>
 </div>
 
-<!-- MAIN APP -->
-<div id="appPage" class="app-container" style="display:none;">
-  <div class="card">
-    <h2>EA Notes</h2>
-
-    <select id="folderSelect" onchange="loadFiles()">
-      <option value="Anatomy">Anatomy</option>
-      <option value="History">History</option>
-      <option value="Inclusiveness">Inclusiveness</option>
-      <option value="Civics">Civics</option>
-      <option value="Global affairs">Global affairs</option>
-      <option value="Geography">Geography</option>
-      <option value="Psychology">Psychology</option>
-    </select>
-
-    <input type="file" id="fileUpload" onchange="uploadFile()" />
-
-    <h3>Uploaded Files</h3>
-    <div id="fileList"></div>
-
-    <button onclick="logout()" style="background:red;">Logout</button>
-    <button onclick="toggleDark()">🌙 Toggle Dark Mode</button>
-  </div>
-</div>
+<!-- Firebase (compat CDN is easiest for quick paste) -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
 
 <script>
-  /* INITIAL LOAD */
-  window.onload = () => {
-    if (localStorage.getItem('darkMode') === 'true') {
-      document.body.classList.add('dark');
-    }
+/* -------------------------
+  REPLACE THIS CONFIG with your Firebase project's config
+  You will find these values in Firebase Console -> Project Settings -> SDK Setup
+------------------------- */
+const firebaseConfig = {
+  apiKey: "REPLACE_WITH_YOUR_API_KEY",
+  authDomain: "REPLACE_WITH_PROJECT.firebaseapp.com",
+  projectId: "REPLACE_WITH_PROJECT",
+  storageBucket: "REPLACE_WITH_PROJECT.appspot.com",
+  messagingSenderId: "SENDER_ID",
+  appId: "APP_ID"
+};
+/* ------------------------- */
 
-    if (localStorage.getItem('loggedIn') === 'true') {
-      showApp();
-    }
-  };
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const storage = firebase.storage();
 
-  function toggleDark() {
-    document.body.classList.toggle('dark');
-    localStorage.setItem('darkMode', document.body.classList.contains('dark'));
-  }
+/* App state */
+let currentUser = null;
+let currentRole = null; // "teacher" or "student"
 
-  /* LOGIN */
-  function login() {
-    const user = document.getElementById("username").value.trim();
-    const pass = document.getElementById("password").value;
-
-    if (pass === "@teacher123") {
-      localStorage.setItem("role", "teacher");
-      localStorage.setItem("loggedIn", "true");
-      showApp();
-    }
-    else if (pass === "@armyamanu" && user !== "") {
-      localStorage.setItem("role", "student");
-      localStorage.setItem("loggedIn", "true");
-      showApp();
-    }
-    else {
-      alert("Incorrect name or password");
-    }
-  }
-
-  function logout() {
-    localStorage.removeItem("loggedIn");
-    localStorage.removeItem("role");
-    location.reload();
-  }
-
-  /* SHOW MAIN APP */
-  function showApp() {
-    document.getElementById("loginPage").style.display = "none";
-    document.getElementById("appPage").style.display = "block";
-
-    const role = localStorage.getItem("role");
-    const fileInput = document.getElementById("fileUpload");
-
-    if (role === "student") {
-      fileInput.style.display = "none";  
+window.onload = () => {
+  // dark mode
+  if (localStorage.getItem('ea_dark') === 'true') document.body.style.background = "linear-gradient(180deg,#0f1724,#0b233f)";
+  // file input listen
+  document.getElementById('fileUpload').addEventListener('change', handleFilePick);
+  // check already signed in
+  auth.onAuthStateChanged(async user => {
+    if (user) {
+      currentUser = user;
+      // try to load role doc
+      const userDoc = await db.collection('users').doc(user.uid).get().catch(()=>null);
+      if (userDoc && userDoc.exists) {
+        currentRole = userDoc.data().role;
+        postLoginUI();
+      } else {
+        // guest state (not set) -> show login
+        showLogin();
+      }
     } else {
-      fileInput.style.display = "block";
+      showLogin();
     }
+  });
+};
 
-    loadFiles();
+/* UI helpers */
+function showLogin(){
+  document.getElementById('loginCard').style.display = 'block';
+  document.getElementById('appCard').style.display = 'none';
+  document.getElementById('userRole').innerText = 'Not logged in';
+}
+function postLoginUI(){
+  document.getElementById('loginCard').style.display = 'none';
+  document.getElementById('appCard').style.display = 'block';
+  document.getElementById('userRole').innerText = (currentRole === 'teacher') ? 'Teacher' : 'Student';
+  loadFiles();
+}
+
+/* Simple login using your passwords (kept exactly) */
+async function appLogin(){
+  const name = document.getElementById('username').value.trim();
+  const pass = document.getElementById('password').value;
+
+  // basic checks
+  if (pass === '@teacher123' || (pass === '@armyamanu' && name !== '')) {
+    // sign in anonymously (or reuse existing) to get uid
+    try {
+      const result = await auth.signInAnonymously();
+      const uid = result.user.uid;
+
+      // create or set user doc (only this user can create their own doc: rules will allow that)
+      const role = (pass === '@teacher123') ? 'teacher' : 'student';
+      await db.collection('users').doc(uid).set({
+        name,
+        role,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+
+      currentUser = result.user;
+      currentRole = role;
+      postLoginUI();
+    } catch (err) {
+      console.error('Auth error', err);
+      alert('Login failed. Check console for details.');
+    }
+  } else {
+    alert('Incorrect name or password');
+  }
+}
+
+/* Logout */
+async function appLogout(){
+  try {
+    await auth.signOut();
+  } catch(e){ console.warn(e); }
+  currentUser = null;
+  currentRole = null;
+  // simple reload to clear UI
+  location.reload();
+}
+
+/* File upload handler */
+async function handleFilePick(e){
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const subject = document.getElementById('folderSelect').value;
+  if (!currentUser || !currentRole) {
+    alert('You must be logged in to upload.');
+    document.getElementById('fileUpload').value = '';
+    return;
   }
 
-  /* UPLOAD FILE */
-  function uploadFile() {
-    const folder = document.getElementById("folderSelect").value;
-    const file = document.getElementById("fileUpload").files[0];
-    if (!file) return;
+  // Only teacher allowed to upload
+  if (currentRole !== 'teacher') {
+    alert('Only teachers can upload files.');
+    document.getElementById('fileUpload').value = '';
+    return;
+  }
 
-    const reader = new FileReader();
+  try {
+    const uid = currentUser.uid;
+    const timestamp = Date.now();
+    const safeName = file.name.replace(/[^\w.\-() ]/g,'');
+    const storagePath = `files/${subject}/${uid}_${timestamp}_${safeName}`;
+    const ref = storage.ref().child(storagePath);
 
-    reader.onload = function (e) {
-      const fileData = {
+    // upload with a small progress UI
+    const uploadTask = ref.put(file);
+    uploadTask.on('state_changed', snapshot => {
+      // Could show progress - left minimal for brevity
+    }, err => {
+      console.error('Upload failed', err);
+      alert('Upload failed. Check console.');
+      document.getElementById('fileUpload').value = '';
+    }, async () => {
+      // done
+      const url = await uploadTask.snapshot.ref.getDownloadURL();
+      // store metadata in Firestore
+      await db.collection('files').add({
+        subject,
         name: file.name,
         size: file.size,
-        content: e.target.result
-      };
-
-      const key = `folder_${folder}`;
-      const files = JSON.parse(localStorage.getItem(key) || "[]");
-
-      files.push(fileData);
-      localStorage.setItem(key, JSON.stringify(files));
-
-      document.getElementById("fileUpload").value = ""; 
+        url,
+        storagePath,
+        uploaderUid: uid,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      document.getElementById('fileUpload').value = '';
       loadFiles();
-    };
-
-    reader.readAsDataURL(file);
+    });
+  } catch (err) {
+    console.error(err);
+    alert('Upload error. See console.');
+    document.getElementById('fileUpload').value = '';
   }
+}
 
-  /* LOAD FILES PER SUBJECT */
-  function loadFiles() {
-    const folder = document.getElementById("folderSelect").value;
-    const key = `folder_${folder}`;
+/* Load files for selected subject */
+async function loadFiles(){
+  const subject = document.getElementById('folderSelect').value;
+  const list = document.getElementById('fileList');
+  list.innerHTML = '<div class="muted">Loading…</div>';
 
-    const files = JSON.parse(localStorage.getItem(key) || "[]");
-    const list = document.getElementById("fileList");
+  try {
+    const snapshot = await db.collection('files')
+      .where('subject', '==', subject)
+      .orderBy('createdAt','desc')
+      .limit(100)
+      .get();
 
-    list.innerHTML = ""; 
+    if (snapshot.empty) {
+      list.innerHTML = '<div class="muted">No files yet in this subject.</div>';
+      return;
+    }
 
-    files.forEach((file, index) => {
-      list.innerHTML += `
-        <div class="file-item">
-          <b>${file.name}</b><br>
-          <small>${(file.size / 1024).toFixed(2)} KB</small><br><br>
-          <button disabled style="opacity:0.5; cursor:not-allowed;">View Only</button>
-          <button class="delete-btn" onclick="deleteFile(${index})">X</button>
+    list.innerHTML = '';
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const div = document.createElement('div');
+      div.className = 'file-row';
+      div.innerHTML = `
+        <div class="file-meta">
+          <div class="file-name">${escapeHtml(data.name)}</div>
+          <div class="file-small">${(data.size/1024).toFixed(2)} KB • ${new Date(data.createdAt?.toDate?.() || Date.now()).toLocaleString()}</div>
+        </div>
+        <div class="actions">
+          <button class="btn ghost" onclick="viewFile('${doc.id}')">View</button>
+          ${ (currentRole === 'teacher') ? `<button class="btn ghost" onclick="deleteFile('${doc.id}','${data.storagePath}')">Delete</button>` : '' }
         </div>
       `;
+      list.appendChild(div);
     });
+  } catch (err) {
+    console.error(err);
+    list.innerHTML = '<div class="muted">Failed to load files.</div>';
   }
+}
 
-  /* DELETE FILE */
-  function deleteFile(i) {
-    const folder = document.getElementById("folderSelect").value;
-    const key = `folder_${folder}`;
+/* Preview logic */
+async function viewFile(docId){
+  try {
+    const doc = await db.collection('files').doc(docId).get();
+    if (!doc.exists) { alert('File not found'); return; }
+    const data = doc.data();
 
-    const files = JSON.parse(localStorage.getItem(key) || "[]");
-    files.splice(i, 1);
+    document.getElementById('previewTitle').innerText = data.name;
+    const body = document.getElementById('previewBody');
+    body.innerHTML = ''; // clear
 
-    localStorage.setItem(key, JSON.stringify(files));
+    const url = data.url;
+    const ext = (data.name.split('.').pop() || '').toLowerCase();
+
+    if (['png','jpg','jpeg','gif','webp','bmp'].includes(ext)) {
+      const img = document.createElement('img');
+      img.className = 'preview';
+      img.src = url;
+      img.alt = data.name;
+      body.appendChild(img);
+    } else if (ext === 'pdf') {
+      const iframe = document.createElement('iframe');
+      iframe.className = 'preview';
+      iframe.src = url;
+      body.appendChild(iframe);
+    } else if (['mp4','webm','ogg'].includes(ext)){
+      const video = document.createElement('video');
+      video.className = 'preview';
+      video.controls = true;
+      const s = document.createElement('source');
+      s.src = url;
+      video.appendChild(s);
+      body.appendChild(video);
+    } else if (['txt','md','csv','json'].includes(ext)) {
+      // fetch as text
+      const res = await fetch(url);
+      const text = await res.text();
+      const pre = document.createElement('pre');
+      pre.className = 'preview';
+      pre.textContent = text;
+      body.appendChild(pre);
+    } else {
+      // fallback - offer download
+      const link = document.createElement('a');
+      link.href = url;
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.textContent = 'Open file in new tab / download';
+      body.appendChild(link);
+    }
+
+    // show modal
+    document.getElementById('previewBackdrop').style.display = 'flex';
+  } catch (err) {
+    console.error(err);
+    alert('Failed to load preview.');
+  }
+}
+
+function closePreview(e){
+  document.getElementById('previewBackdrop').style.display = 'none';
+  document.getElementById('previewBody').innerHTML = '';
+}
+
+/* Delete (teacher only) */
+async function deleteFile(docId, storagePath){
+  if (!confirm('Delete this file?')) return;
+  try {
+    // delete storage object
+    await storage.ref().child(storagePath).delete();
+    // delete firestore doc
+    await db.collection('files').doc(docId).delete();
     loadFiles();
+  } catch (err) {
+    console.error(err);
+    alert('Delete failed.');
   }
-</script>
+}
 
+/* small helper */
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]; });
+}
+
+/* toggle dark (simple) */
+function toggleDark(){
+  if (localStorage.getItem('ea_dark') === 'true') {
+    localStorage.removeItem('ea_dark');
+    document.body.style.background = "linear-gradient(180deg,#e6eefc 0%, #f7fbff 100%)";
+  } else {
+    localStorage.setItem('ea_dark','true');
+    document.body.style.background = "linear-gradient(180deg,#0f1724,#0b233f)";
+  }
+}
+
+</script>
 </body>
 </html>
