@@ -189,6 +189,8 @@
 </div>
 
 <script>
+/* CLEAN FULL JS INSERTED (fixed template literals) */
+
 /***************************************************
   FIREBASE INIT
 ***************************************************/
@@ -201,6 +203,7 @@ const firebaseConfig = {
   appId:"1:468802966776:web:57cc6f23da92b6f3f7d70d"
 };
 firebase.initializeApp(firebaseConfig);
+
 const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
@@ -208,13 +211,14 @@ const storage = firebase.storage();
 /***************************************************
   DOM ELEMENTS
 ***************************************************/
-const passwordInput = document.getElementById("password");
 const usernameInput = document.getElementById("username");
+const passwordInput = document.getElementById("password");
+const btnLogin = document.getElementById("btnLogin");
+const btnLogout = document.getElementById("btnLogout");
 
 const loginArea = document.getElementById("loginArea");
 const mainArea = document.getElementById("mainArea");
-const btnLogin = document.getElementById("btnLogin");
-const btnLogout = document.getElementById("btnLogout");
+const uploadRow = document.getElementById("uploadRow");
 const userRole = document.getElementById("userRole");
 
 const fileUpload = document.getElementById("fileUpload");
@@ -229,120 +233,135 @@ const pdfName = document.getElementById("pdfName");
 const closePdf = document.getElementById("closePdf");
 
 /***************************************************
-  LOGIN
+  LOGIN LOGIC
 ***************************************************/
 let currentRole = null;
 const TEACHER_PASS = "@teacher123";
 const STUDENT_PASS = "@armyamanu";
 
-// FIX: Ensure event listener attaches AFTER DOM loads
 btnLogin.addEventListener("click", async () => {
-  console.log("LOGIN CLICKED"); // Debug
+  console.log("LOGIN CLICKED");
 
   const pass = passwordInput.value.trim();
   const name = usernameInput.value.trim();
 
-  if(pass === TEACHER_PASS) currentRole = "teacher";
-  else if(pass === STUDENT_PASS){
-    if(!name) return alert("Enter your name");
+  if (pass === TEACHER_PASS) {
+    currentRole = "teacher";
+  } else if (pass === STUDENT_PASS) {
+    if (!name) return alert("Students must enter a name.");
     currentRole = "student";
-  } else return alert("Incorrect password");
+  } else {
+    return alert("Incorrect password");
+  }
 
   userRole.textContent = currentRole;
   loginArea.style.display = "none";
   mainArea.style.display = "grid";
   uploadRow.style.display = currentRole === "teacher" ? "flex" : "none";
 
-  try{
-    const res = await firebase.auth().signInAnonymously();
-    await db.collection("users").doc(res.user.uid).set({ name, role: currentRole }, { merge:true });
-    loadFiles();
-  } catch(err){
-    alert("Login error: " + err.message);
-  }
+  const user = await auth.signInAnonymously();
+  await db.collection("users").doc(user.user.uid).set(
+    { name, role: currentRole },
+    { merge: true }
+  );
+
+  loadFiles();
 });
 
 /***************************************************
   LOGOUT
 ***************************************************/
-btnLogout.onclick = () => {
+btnLogout.addEventListener("click", () => {
   auth.signOut();
   loginArea.style.display = "block";
   mainArea.style.display = "none";
+  usernameInput.value = "";
+  passwordInput.value = "";
   userRole.textContent = "Not logged in";
-  username.value="";
-  password.value="";
-};
+});
 
 /***************************************************
   LOAD FILES
 ***************************************************/
 let filesCache = [];
-async function loadFiles(){
+async function loadFiles() {
   const subject = folderSelect.value;
+
   fileList.innerHTML = "<div class='muted'>Loading...</div>";
 
-  const snap = await db.collection("files")
-    .where("subject","==",subject)
-    .orderBy("time","desc")
+  const snap = await db
+    .collection("files")
+    .where("subject", "==", subject)
+    .orderBy("time", "desc")
     .get();
 
   filesCache = [];
-  snap.forEach(doc=>{
-    filesCache.push({...doc.data(),id:doc.id});
-  });
+  snap.forEach(doc => filesCache.push({ ...doc.data(), id: doc.id }));
 
   renderFiles();
 }
 
 /***************************************************
-  RENDER FILE LIST
+  RENDER FILES
 ***************************************************/
-function renderFiles(){
+function renderFiles() {
   const q = searchInput.value.toLowerCase();
-  const filtered = filesCache.filter(f => f.name.toLowerCase().includes(q));
 
-  if(filtered.length===0){
-    fileList.innerHTML = "<div class='muted'>No files</div>";
+  const filtered = filesCache.filter(f =>
+    f.name.toLowerCase().includes(q)
+  );
+
+  if (filtered.length === 0) {
+    fileList.innerHTML = "<div class='muted'>No files found.</div>";
     return;
   }
 
-  fileList.innerHTML = filtered.map(f=>`
-    <div class="file-row">
-      <div>
-        <div style='font-weight:700'>${f.name}</div>
-        <div class='muted'>${(f.size/1024).toFixed(1)} KB</div>
-      </div>
-      <div style='display:flex;gap:6px'>
-        <button class='btn primary' onclick='previewPDF("${f.url}","${f.name}")'>Preview</button>
-        <a class='btn ghost' href='${f.url}' target='_blank'>Open</a>
-        ${currentRole==="teacher" ? `<button class='btn danger' onclick='deleteFile("${f.id}","${f.url}")'>Delete</button>` : ""}
-      </div>
-    </div>`
-  ).join("");
+  let output = "";
+
+  filtered.forEach(f => {
+    output += `
+      <div class="file-row">
+        <div>
+          <div style=\"font-weight:700\">${f.name}</div>
+          <div class=\"muted\">${(f.size / 1024).toFixed(1)} KB</div>
+        </div>
+        <div style=\"display:flex;gap:6px\">`;
+
+    output += `<button class=\"btn primary\" onclick=\"previewPDF('${f.url}','${f.name}')\">Preview</button>`;
+    output += `<a class=\"btn ghost\" href=\"${f.url}\" target=\"_blank\">Open</a>`;
+
+    if (currentRole === "teacher") {
+      output += `<button class=\"btn danger\" onclick=\"deleteFile('${f.id}','${f.url}')\">Delete</button>`;
+    }
+
+    output += `</div></div>`;
+  });
+
+  fileList.innerHTML = output;
 }
 
 /***************************************************
   PDF PREVIEW
 ***************************************************/
-function previewPDF(url,name){
-  pdfFrame.src=url;
-  pdfName.textContent=name;
-  pdfOverlay.style.display="flex";
+function previewPDF(url, name) {
+  pdfFrame.src = url;
+  pdfName.textContent = name;
+  pdfOverlay.style.display = "flex";
 }
-closePdf.onclick = () =>{
-  pdfOverlay.style.display="none";
-  pdfFrame.src="";
-};
+
+closePdf.addEventListener("click", () => {
+  pdfOverlay.style.display = "none";
+  pdfFrame.src = "";
+});
 
 /***************************************************
-  FILE UPLOAD
+  UPLOAD FILE (Teacher)
 ***************************************************/
-fileUpload.onchange = async (e)=>{
-  if(currentRole!=="teacher") return alert("Teachers only");
+fileUpload.addEventListener("change", async e => {
+  if (currentRole !== "teacher") return alert("Teachers only");
 
   const file = e.target.files[0];
-  if(!file) return;
+  if (!file) return;
 
   const subject = folderSelect.value;
   const path = `files/${subject}/${Date.now()}_${file.name}`;
@@ -353,27 +372,25 @@ fileUpload.onchange = async (e)=>{
 
   await db.collection("files").add({
     subject,
-    name:file.name,
-    size:file.size,
+    name: file.name,
+    size: file.size,
     url,
-    time:Date.now()
+    time: Date.now()
   });
 
   loadFiles();
-};
+});
 
 /***************************************************
   DELETE FILE
 ***************************************************/
-async function deleteFile(id,url){
-  if(!confirm("Delete file?")) return;
+async function deleteFile(id, url) {
+  if (!confirm("Delete file?")) return;
 
   await db.collection("files").doc(id).delete();
 
-  try{
-    const path = decodeURIComponent(url.split("/o/")[1].split('?')[0]);
-    await storage.ref().child(path).delete();
-  }catch(e){console.log("Storage delete failed",e);}
+  const path = decodeURIComponent(url.split("/o/")[1].split("?")[0]);
+  await storage.ref().child(path).delete();
 
   loadFiles();
 }
@@ -381,11 +398,11 @@ async function deleteFile(id,url){
 /***************************************************
   EVENTS
 ***************************************************/
-folderSelect.onchange = loadFiles;
-btnRefresh.onclick = loadFiles;
-searchInput.oninput = renderFiles;
+searchInput.addEventListener("input", renderFiles);
+folderSelect.addEventListener("change", loadFiles);
+btnRefresh.addEventListener("click", loadFiles);
 
-themeToggle.onclick = () =>{
+document.getElementById("themeToggle").onclick = () => {
   document.body.classList.toggle("dark");
 };
 
