@@ -1,250 +1,166 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>EA Notes — Secure Cloud</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EA Notes Cloud</title>
 
-  <!-- Inter font -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-
-  <!-- Firebase SDK -->
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 
+  <!-- Styles -->
   <style>
     :root {
-      --bg: #f4f7fb;
-      --card: #ffffff;
-      --text: #111827;
-      --soft: #eef2f5;
-      --accent: #0b69ff;
-      --muted: #7b8794;
-      --danger: #e23b3b;
-      --shadow: 0 20px 50px rgba(2, 6, 23, 0.12);
+      --bg:#f5f6fa;
+      --card:#ffffff;
+      --text:#111;
+      --soft:#eef1f5;
+      --accent:#0b69ff;
+      --muted:#7b8794;
+      --danger:#e23b3b;
     }
 
     body.dark {
-      --bg: #0b1220;
-      --card: #071422;
-      --text: #e6eefc;
-      --soft: #102030;
-      --accent: #3b82f6;
-      --muted: #9aa6b2;
-      --danger: #ff4c4c;
-      --shadow: 0 20px 40px rgba(0,0,0,0.45);
+      --bg:#0b1220;
+      --card:#0e1a2b;
+      --text:#e6eefc;
+      --soft:#1a2739;
+      --accent:#3b82f6;
+      --muted:#9aa6b2;
+      --danger:#ff4c4c;
     }
 
-    *{ box-sizing: border-box; }
     body {
-      margin: 0; padding: 24px;
-      background: var(--bg);
-      font-family: Inter, system-ui;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text);
-      transition: background .35s ease, color .35s ease;
+      margin:0;
+      font-family:Arial, sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      transition:0.3s;
+      display:flex;
+      justify-content:center;
+      padding:20px;
     }
 
     .app {
-      width: 980px; max-width: 98%;
-      background: var(--card);
-      border-radius: 14px;
-      box-shadow: var(--shadow);
-      overflow: hidden;
-      animation: fadeIn .6s ease forwards;
+      width:900px;
+      background:var(--card);
+      border-radius:14px;
+      padding:20px;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(40px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    header {
-      padding: 14px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: linear-gradient(90deg, var(--soft), transparent);
-      border-bottom: 1px solid rgba(0,0,0,0.08);
-    }
-
-    .logo {
-      background: var(--accent);
-      color: white;
-      font-weight: 700;
-      width: 46px; height: 46px;
-      display: flex; align-items: center; justify-content: center;
-      border-radius: 10px;
-      font-size: 18px;
-    }
-
-    /* Screens */
-    #loginArea {
-      padding: 26px; text-align: center;
-      animation: fadeIn .5s ease;
-    }
-    #mainArea {
-      display: none;
-      padding: 18px; gap: 18px;
-      grid-template-columns: 320px 1fr;
-      animation: fadeIn .5s ease;
-    }
-
-    /* UI blocks */
-    .panel {
-      padding: 14px; border-radius: 12px;
-      background: var(--card);
-      box-shadow: 0 6px 18px rgba(0,0,0,0.05);
-    }
-    .card { padding: 12px; background: var(--card); border-radius: 10px; }
-
-    /* Inputs */
-    input, select {
-      width: 100%; padding: 12px;
-      background: var(--soft);
-      border-radius: 10px;
-      border: 1px solid rgba(0,0,0,0.1);
-      color: var(--text);
-      transition: .25s;
-    }
-    input:focus, select:focus {
-      border-color: var(--accent);
-    }
-
-    /* Buttons */
     .btn {
-      padding: 10px 12px;
-      border-radius: 10px;
-      border: none;
-      cursor: pointer;
-      font-weight: 600;
-      transition: .25s;
+      padding:10px 14px;
+      border-radius:10px;
+      border:none;
+      cursor:pointer;
+      font-weight:600;
     }
 
-    .primary { background: var(--accent); color: white; }
-    .primary:hover { opacity: .85; }
+    .primary { background:var(--accent); color:white; }
+    .danger { background:var(--danger); color:white; }
+    .ghost { background:none; border:1px solid var(--accent); color:var(--accent); }
 
-    .ghost {
-      background: transparent;
-      border: 1px solid var(--accent);
-      color: var(--accent);
+    input, select {
+      width:100%;
+      padding:12px;
+      border-radius:10px;
+      border:1px solid #ccc;
+      margin-top:6px;
+      background:var(--soft);
+      color:var(--text);
     }
-    .ghost:hover { background: var(--accent); color: white; }
 
-    .danger { background: var(--danger); color: white; }
-    .danger:hover { opacity: .85; }
-
-    /* Files */
-    #fileList {
-      margin-top: 14px;
-      display: flex; flex-direction: column;
-      gap: 10px; max-height: 66vh;
-      overflow: auto; padding-right: 6px;
-    }
+    #mainArea { display:none; }
+    #fileList { margin-top:15px; }
 
     .file-row {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 12px; background: var(--soft);
-      border-radius: 10px;
-      border: 1px solid rgba(0,0,0,0.06);
-      transition: .25s;
+      display:flex;
+      justify-content:space-between;
+      padding:10px;
+      background:var(--soft);
+      border-radius:10px;
+      margin-bottom:10px;
     }
-    .file-row:hover { transform: scale(1.01); }
 
-    /* PDF Viewer */
     #pdfOverlay {
-      display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,0.85);
-      align-items: center; justify-content: center;
-      z-index: 9999;
+      display:none;
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.85);
+      justify-content:center;
+      align-items:center;
+      z-index:999;
     }
 
     #pdfViewer {
-      width: 90%; height: 90%; background: white;
-      display: flex; flex-direction: column;
-      border-radius: 12px;
-      overflow: hidden;
+      width:90%;
+      height:90%;
+      background:white;
+      border-radius:10px;
+      display:flex;
+      flex-direction:column;
     }
 
-    #pdfFrame { flex: 1; border: 0; width: 100%; }
+    iframe { flex:1; border:0; }
   </style>
 </head>
 
 <body>
 
 <div class="app">
-  <header>
-    <div style="display:flex; gap:14px; align-items:center;">
-      <div class="logo">EA</div>
-      <div>
-        <div style="font-weight:700">EA Notes Cloud</div>
-        <div class="muted">Safe storage for teacher & student notes</div>
-      </div>
-    </div>
-    <div style="display:flex; gap:12px;">
-      <div id="userRole" class="muted">Not logged in</div>
-      <button id="themeToggle" class="btn ghost">🌓</button>
-    </div>
-  </header>
+  <h2>EA Notes Cloud</h2>
 
-  <!-- LOGIN SCREEN -->
-  <div id="loginArea">
-    <div class="card" style="max-width:350px;margin:auto;">
-      <label>Email (teachers) or Name (students)</label>
-      <input id="username" type="text">
-
-      <label style="margin-top:10px">Password (teachers)</label>
-      <input id="password" type="password" placeholder="Leave empty if student">
-
-      <button id="btnLogin" class="btn primary" style="margin-top:12px;width:100%">Login</button>
-    </div>
+  <div style="text-align:right; margin-bottom:10px;">
+    <button id="themeToggle" class="btn ghost">🌙</button>
+    <span id="userRole">Not logged in</span>
   </div>
 
-  <!-- MAIN AREA -->
-  <main id="mainArea">
-    <!-- left -->
-    <div class="panel">
-      <div class="card">
-        <label>Subject</label>
-        <select id="folderSelect" style="margin-top:6px">
-          <option>Anatomy</option>
-          <option>History</option>
-          <option>Inclusiveness</option>
-          <option>Civics</option>
-          <option>Global affairs</option>
-          <option>Geography</option>
-          <option>Psychology</option>
-        </select>
+  <!-- LOGIN -->
+  <div id="loginArea">
+    <label>Teacher Email OR Student Name</label>
+    <input id="username" type="text">
 
-        <div id="uploadRow" style="display:none;margin-top:10px;gap:8px;align-items:center;">
-          <label for="fileUpload" class="btn ghost" style="cursor:pointer">📤 Upload PDF</label>
-          <input id="fileUpload" type="file" accept="application/pdf" style="display:none">
-          <button id="btnLogout" class="btn danger">Logout</button>
-        </div>
-      </div>
+    <label>Password (teachers only)</label>
+    <input id="password" type="password">
+
+    <button id="btnLogin" class="btn primary" style="width:100%; margin-top:10px;">Login</button>
+  </div>
+
+  <!-- MAIN -->
+  <div id="mainArea">
+    <label>Subject</label>
+    <select id="folderSelect">
+      <option>Anatomy</option>
+      <option>History</option>
+      <option>Inclusiveness</option>
+      <option>Civics</option>
+      <option>Global affairs</option>
+      <option>Geography</option>
+      <option>Psychology</option>
+    </select>
+
+    <div style="margin-top:10px; display:flex; gap:10px;">
+      <label for="fileUpload" class="btn ghost" id="uploadBtn" style="display:none; cursor:pointer;">Upload PDF</label>
+      <input id="fileUpload" type="file" style="display:none" accept="application/pdf">
+
+      <button id="btnLogout" class="btn danger">Logout</button>
     </div>
 
-    <!-- right -->
-    <div class="panel">
-      <div style="display:flex;gap:12px;align-items:center;">
-        <input id="searchInput" type="search" placeholder="Search files..." style="flex:1">
-        <button id="btnRefresh" class="btn ghost">Refresh</button>
-      </div>
+    <input id="searchInput" placeholder="Search files..." style="margin-top:20px;">
+    <button id="btnRefresh" class="btn ghost" style="margin-top:10px;">Refresh</button>
 
-      <div id="fileList"></div>
-    </div>
-  </main>
+    <div id="fileList"></div>
+  </div>
 </div>
 
-<!-- PDF preview -->
+<!-- PDF Viewer -->
 <div id="pdfOverlay">
   <div id="pdfViewer">
-    <div style="padding:10px;display:flex;justify-content:space-between;align-items:center;background:var(--soft)">
-      <div id="pdfName" style="font-weight:700;color:var(--text)"></div>
+    <div style="padding:10px; display:flex; justify-content:space-between;">
+      <span id="pdfName"></span>
       <button id="closePdf" class="btn primary">Close</button>
     </div>
     <iframe id="pdfFrame"></iframe>
@@ -252,6 +168,5 @@
 </div>
 
 <script src="script.js"></script>
-
 </body>
 </html>
