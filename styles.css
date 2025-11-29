@@ -31,7 +31,6 @@ input, select {
 button {
     width: 100%;
     padding: 12px;
-    margin-top: 10px;
     background: #11c6aa;
     border: none;
     border-radius: 6px;
@@ -76,5 +75,26 @@ button:hover {
 
 .feedback {
     color: #ff6b6b;
-    height: 20px;
+}
+
+/* UPLOAD PROGRESS */
+.progress-box {
+    background: #26464d;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+}
+
+.progress-bar {
+    height: 8px;
+    background: #1ad4f7;
+    width: 0%;
+    border-radius: 4px;
+    transition: width 0.2s;
+}
+
+.progress-text {
+    font-size: 12px;
+    margin-top: 6px;
+    color: #ccc;
 }
