@@ -244,8 +244,8 @@ function loadFiles(){
         <div class='file-small'>${(f.size/1024).toFixed(2)} KB</div>
       </div>
       <div class='actions'>
-        <button class='btn ghost' onclick='viewFile("${subject}",${i})'>View</button>
-        ${currentRole === "teacher" ? `<button class='btn ghost' onclick='deleteFile("${subject}",${i})'>Delete</button>` : ""}
+        <button class='btn ghost view-btn' onclick='viewFile("${subject}",${i})'>View</button>
+        ${currentRole === "teacher" ? `<button class='btn ghost delete-btn' onclick='deleteFile("${subject}",${i})'>Delete</button>` : ""}
       </div>
     `;
     list.appendChild(row);
