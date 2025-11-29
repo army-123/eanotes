@@ -3,141 +3,185 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>EA Notes Cloud</title>
+<title>EA Notes Cloud — Liquid</title>
 
+<!-- Supabase client (loaded for script.js to use) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
 <style>
-:root{
-  --bg:#0f1724; --card:#0b1220; --text:#e6eefc; --muted:#9aa8c7; 
-  --accent:#3b82f6; --danger:#dc2626;
-}
-body.light{ --bg:#f6f8ff; --card:#ffffff; --text:#0b1220; --muted:#6b7280; --accent:#2563eb; }
+  /* ---------- Liquid theme colors ---------- */
+  :root{
+    --bg-1: #052a2b;
+    --bg-2: #063b3c;
+    --glass: rgba(255,255,255,0.04);
+    --muted: rgba(230,240,245,0.6);
+    --accent-1: #3dd5c0;
+    --accent-2: #2aa4f4;
+    --danger: #ff6b6b;
+    --card-radius: 14px;
+  }
 
-*{box-sizing:border-box;}
-body{
-  margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui;
-  padding:20px;min-height:100vh;display:flex;align-items:center;justify-content:center;
-}
+  html,body{ height:100%; margin:0; font-family:Inter,system-ui,Arial; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; background: linear-gradient(135deg,var(--bg-1),var(--bg-2)); color: #e9f6f5; }
 
-.container{
-  width:920px;max-width:100%;background:var(--card);border-radius:12px;
-  padding:18px;box-shadow:0 10px 30px rgba(0,0,0,0.45);
-}
+  /* center container */
+  .wrap { min-height:100%; display:flex; align-items:center; justify-content:center; padding:28px; box-sizing:border-box; }
 
-.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
-h1{margin:0;} .muted{color:var(--muted);font-size:13px;}
+  /* card */
+  .card {
+    width:980px; max-width:100%; background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    border-radius: var(--card-radius); padding:20px; box-shadow: 0 10px 40px rgba(2,8,10,0.6);
+    backdrop-filter: blur(6px);
+    overflow: hidden;
+  }
 
-.section{
-  background:rgba(255,255,255,0.03);padding:14px;border-radius:10px;margin-top:12px;
-}
+  .header { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px; }
+  h1 { margin:0; font-size:20px; letter-spacing:0.2px; }
+  .sub { color:var(--muted); font-size:13px; margin-top:4px; }
 
-label{display:block;margin-top:8px;font-size:13px;color:var(--muted);}
-input{
-  width:100%;padding:10px;margin-top:8px;border-radius:8px;
-  border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--text);
-}
+  /* layout: login + dashboard stacked (we hide/show) */
+  .section { margin-top:14px; }
 
-button{
-  padding:10px 12px;border-radius:8px;border:0;cursor:pointer;font-weight:600;
-}
-.btn-primary{background:var(--accent);color:white;}
-.btn-danger{background:var(--danger);color:white;}
-.btn-ghost{background:transparent;border:1px solid var(--accent);color:var(--accent);}
+  /* login box */
+  #loginBox { display:block; animation:fadeUp .35s ease both; }
+  label { display:block; margin-top:12px; color:var(--muted); font-size:13px; }
+  input[type="text"], input[type="password"] {
+    width:100%; padding:12px 14px; margin-top:8px; border-radius:10px; border:1px solid rgba(255,255,255,0.04);
+    background: rgba(255,255,255,0.02); color:inherit; outline:none; box-sizing:border-box;
+    transition: transform .08s ease, box-shadow .12s ease;
+  }
+  input:focus { box-shadow: 0 6px 20px rgba(32,160,155,0.08); transform: translateY(-1px); }
 
-#loadingOverlay{
-  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);
-  z-index:999;align-items:center;justify-content:center;
-}
-.spinner{
-  width:40px;height:40px;border:4px solid rgba(255,255,255,0.2);
-  border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;
-}
-@keyframes spin{to{transform:rotate(360deg);}}
+  .btn {
+    display:inline-flex; align-items:center; justify-content:center;
+    padding:12px 14px; border-radius:10px; border:0; cursor:pointer; font-weight:700;
+  }
 
-.fileRow{
-  display:flex;justify-content:space-between;gap:12px;padding:10px;border-radius:8px;
-  background:rgba(255,255,255,0.02);margin-top:10px;align-items:center;
-}
+  .btn-primary {
+    background: linear-gradient(90deg,var(--accent-1),var(--accent-2));
+    color:#04292b; box-shadow: 0 8px 30px rgba(45,200,180,0.12);
+  }
 
-.pdf-overlay{
-  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.86);
-  z-index:9998;align-items:center;justify-content:center;
-}
-.pdf-box{
-  width:92%;height:92%;background:white;border-radius:10px;
-  display:flex;flex-direction:column;overflow:hidden;
-}
-.pdf-frame{flex:1;border:0;}
+  .btn-ghost {
+    background: transparent; color:var(--accent-1); border:1px solid rgba(255,255,255,0.06); font-weight:600;
+  }
+
+  .muted-small { color:var(--muted); font-size:13px; margin-top:10px; min-height:18px; }
+
+  /* Dashboard */
+  #dashboard { display:none; animation:fadeUp .35s ease both; }
+  .topbar { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+  .roleTag { padding:8px 10px; border-radius:999px; background: rgba(255,255,255,0.02); color:var(--muted); font-weight:700; }
+  .controls { display:flex; gap:10px; align-items:center; margin-top:12px; flex-wrap:wrap; }
+
+  select { padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background: rgba(255,255,255,0.02); color:inherit; }
+
+  /* file list */
+  .file-list { margin-top:14px; display:flex; flex-direction:column; gap:10px; }
+  .file-row {
+    display:flex; justify-content:space-between; align-items:center; gap:12px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));
+    border-radius:10px; padding:12px; transform-origin:center; transition: transform .16s ease, box-shadow .16s ease;
+  }
+  .file-row:hover { transform: translateY(-4px); box-shadow: 0 10px 40px rgba(3,22,24,0.35); }
+
+  .file-meta { min-width:0; overflow:hidden; }
+  .file-title { font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .file-sub { color:var(--muted); font-size:13px; margin-top:6px; }
+
+  .file-actions { display:flex; gap:8px; align-items:center; }
+
+  .btn-view { background:transparent; color:var(--accent-2); border:1px solid rgba(255,255,255,0.03); padding:8px 10px; border-radius:8px; }
+  .btn-delete { background:var(--danger); color:white; padding:8px 10px; border-radius:8px; border:0; }
+
+  /* upload placeholder row (uploading) */
+  .uploading { opacity:0.95; }
+
+  .progress {
+    height:8px; background: rgba(255,255,255,0.06); border-radius:8px; overflow:hidden; margin-top:8px;
+  }
+  .progress > b { display:block; height:100%; width:0%; background: linear-gradient(90deg,var(--accent-1),var(--accent-2)); transition: width .25s ease; }
+
+  /* modal / viewer */
+  #pdfModal { display:none; position:fixed; inset:0; z-index:999; background:linear-gradient(rgba(2,6,8,0.6), rgba(2,6,8,0.85)); align-items:center; justify-content:center; }
+  #pdfBox { width:92%; height:88%; background:white; border-radius:10px; overflow:hidden; display:flex; flex-direction:column; }
+
+  #pdfFrame { border:0; flex:1; }
+
+  /* small spinner for inline use */
+  .spinner-inline{ display:inline-block; width:16px; height:16px; border-radius:50%; border:2px solid rgba(255,255,255,0.15); border-top-color:white; animation: spin .8s linear infinite; margin-left:8px; vertical-align:middle; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  /* animations */
+  @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+
+  /* responsive */
+  @media (max-width:940px){
+    .card { padding:16px; width:100% }
+    .controls{ flex-direction:column; align-items:stretch; }
+  }
 </style>
 </head>
 <body>
+  <div class="wrap">
+    <div class="card">
 
-<div id="loadingOverlay"><div class="spinner"></div></div>
+      <!-- header -->
+      <div class="header">
+        <div>
+          <h1>EA Notes Cloud</h1>
+          <div class="sub">Liquid theme — neat, smooth and fast</div>
+        </div>
+        <div id="headerRight" style="display:flex;align-items:center;gap:8px">
+          <!-- will show roleText inside dashboard only -->
+        </div>
+      </div>
 
-<div class="container">
+      <!-- LOGIN -->
+      <div id="loginBox" class="section" aria-live="polite">
+        <label for="loginName">Username / Email</label>
+        <input id="loginName" type="text" autocomplete="off" placeholder="Student name or teacher email">
 
-  <div class="header">
-    <div>
-      <h1>EA Notes Cloud</h1>
-      <div class="muted">Simple Login — Password Decides Role</div>
-    </div>
-    <button id="themeToggle" class="btn-ghost">🌙</button>
-  </div>
+        <label for="loginPassword">Password</label>
+        <input id="loginPassword" type="password" autocomplete="new-password" placeholder="Enter password">
 
-  <!-- LOGIN ONLY -->
-  <div class="section" id="loginSection">
-    <label>Username / Email</label>
-    <input id="username" autocomplete="off" placeholder="Enter username or email">
+        <button id="btnLogin" class="btn btn-primary" style="margin-top:14px;">
+          <span id="btnLoginText">Login</span>
+          <span id="btnLoginSpinner" class="spinner-inline" style="display:none"></span>
+        </button>
 
-    <label>Password</label>
-    <input id="password" type="password" autocomplete="new-password" placeholder="Enter password">
+        <div id="loginFeedback" class="muted-small"></div>
+      </div>
 
-    <button id="loginBtn" class="btn-primary" style="margin-top:12px;width:100%;">Login</button>
+      <!-- DASHBOARD (hidden until login) -->
+      <div id="dashboard" class="section" aria-hidden="true">
+        <div class="topbar">
+          <div>
+            <div class="roleTag" id="roleTag">Role</div>
+            <div class="sub" id="welcomeText" style="margin-top:6px"></div>
+          </div>
 
-    <div id="loginMsg" class="muted" style="margin-top:10px"></div>
+          <div class="controls" id="controlsRow">
+            <select id="subjectSelect" aria-label="subject">
+              <option>Anatomy</option><option>History</option><option>Geography</option><option>Psychology</option><option>Mathematics</option>
+            </select>
 
-    <button id="logoutBtn" class="btn-danger" style="margin-top:12px;display:none;">
-      Logout
-    </button>
-  </div>
+            <button id="uploadBtn" class="btn btn-primary">Upload PDF</button>
+            <input id="realFileInput" type="file" accept="application/pdf" style="display:none">
 
-  <!-- HIDDEN SECTIONS APPEAR AFTER LOGIN -->
-  <div class="section" id="uploadSection" style="display:none;">
-    <label>Subject</label>
-    <select id="subjectSelect">
-      <option>Anatomy</option><option>History</option><option>Geography</option>
-      <option>Psychology</option><option>Mathematics</option>
-    </select>
+            <button id="logoutBtn" class="btn btn-ghost" style="border:1px solid rgba(255,255,255,0.06);">Logout</button>
+          </div>
+        </div>
 
-    <div style="display:flex;gap:8px;margin-top:10px;">
-      <label for="fileInput" class="btn-ghost" style="cursor:pointer;">Choose PDF</label>
-      <input id="fileInput" type="file" accept="application/pdf" style="display:none;">
-      <button id="uploadBtn" class="btn-primary">Upload</button>
-    </div>
+        <div class="file-list" id="fileList" aria-live="polite"></div>
+      </div>
 
-    <div id="uploadInfo" class="muted" style="margin-top:10px;display:none;">
-      Uploading… <span id="uploadPercent">0%</span>
-    </div>
-  </div>
+    </div> <!-- card -->
+  </div> <!-- wrap -->
 
-  <div class="section" id="filesSection" style="display:none;">
-    <h3 style="margin:0;">Files</h3>
-    <div id="fileList"></div>
-  </div>
+  <!-- PDF modal -->
+  <div id="pdfModal"><div id="pdfBox"><div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #eee;"><div id="pdfTitle"></div><div><button id="closePdf" class="btn btn-primary" style="background:var(--accent-2);color:#04292b;">Close</button></div></div><iframe id="pdfFrame"></iframe></div></div>
 
-</div>
-
-<div class="pdf-overlay" id="pdfOverlay">
-  <div class="pdf-box">
-    <div style="display:flex;justify-content:space-between;padding:10px;border-bottom:1px solid #eee;">
-      <div id="pdfTitle"></div>
-      <button id="closePdf" class="btn-primary">Close</button>
-    </div>
-    <iframe id="pdfFrame" class="pdf-frame"></iframe>
-  </div>
-</div>
-
-<script src="script.js"></script>
+  <!-- Logic (separate file recommended) -->
+  <script src="script.js"></script>
 </body>
 </html>
