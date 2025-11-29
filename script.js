@@ -1,20 +1,13 @@
 /* =========================
    EA NOTES CLOUD - script.js
-   Single-page logic for index.html
-   Features:
-   - Login (password decides role)
-   - Dashboard (separate UI shown after login)
-   - Upload button triggers file picker
-   - Shows uploading row immediately and updates when done
-   - File listing, view, delete (teacher)
-   - Small UI animations and loading indicators
    ========================= */
 
 /* ---------- Supabase config (use your project values) ---------- */
 const SUPABASE_URL = "https://hlstgluwamsuuqlctdzk.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhsc3RnbHV3YW1zdXVxbGN0ZHprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyNzMwMzQsImV4cCI6MjA3OTg0OTAzNH0.KUPx3pzrcd3H5aEx2B7mFosWNUVOEzXDD5gL-TmyawQ";
 
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+/*  FIXED HERE — use window.supabase to avoid overwriting the global SDK  */
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
 /* ---------- DOM ---------- */
 const loginBox = document.getElementById('loginBox');
@@ -64,9 +57,8 @@ function showDashboard(show){
   }
 }
 
-/* ---------- theme (liquid accent already applied in CSS) ---------- */
+/* ---------- theme toggle ---------- */
 (function attachThemeToggle(){
-  // small convenience: click headerRight toggles theme (optional)
   const themeButton = document.createElement('button');
   themeButton.textContent = '🌙';
   themeButton.className = 'btn btn-ghost';
@@ -78,7 +70,7 @@ function showDashboard(show){
   headerRight.appendChild(themeButton);
 })();
 
-/* ---------- login logic: password decides role ---------- */
+/* ---------- login logic ---------- */
 async function loginHandler(){
   setFeedback('');
   const name = loginName.value.trim();
@@ -90,19 +82,15 @@ async function loginHandler(){
   }
 
   showLoginLoading(true);
-  // tiny delay so spinner visible
   await new Promise(r=>setTimeout(r, 450));
 
-  // student
   if(pw === '@armyamanu'){
     saveUser({ role:'student', name });
     finishLogin('student', name);
     return;
   }
 
-  // teacher (client-side password as requested)
   if(pw === '@teacher123'){
-    // allow any string as teacher email/identifier
     saveUser({ role:'teacher', name });
     finishLogin('teacher', name);
     return;
@@ -112,13 +100,11 @@ async function loginHandler(){
   showLoginLoading(false);
 }
 
-/* finish login: show dashboard, set UI */
 function finishLogin(role, name){
   roleTag.textContent = role === 'teacher' ? 'Teacher' : 'Student';
   welcomeText.textContent = role === 'teacher' ? `Welcome, Teacher` : `Welcome, ${escapeHtml(name)}`;
   setFeedback('');
 
-  // show/hide controls
   if(role === 'teacher'){
     controlsRow.classList.remove('hidden');
     uploadBtn.style.display = 'inline-flex';
@@ -128,18 +114,17 @@ function finishLogin(role, name){
 
   showDashboard(true);
   showLoginLoading(false);
-  // store session
+
   localStorage.setItem('eanotes_user', JSON.stringify({ role, name }));
 
-  // load files for selected subject
   loadFiles();
 }
 
-/* attach login events */
+/* login events */
 btnLogin.addEventListener('click', loginHandler);
 loginPassword.addEventListener('keyup', (e) => { if(e.key === 'Enter') loginHandler(); });
 
-/* if session exists — auto-enter */
+/* auto session */
 (function autoSession(){
   const raw = localStorage.getItem('eanotes_user');
   if(!raw) return;
@@ -152,24 +137,20 @@ loginPassword.addEventListener('keyup', (e) => { if(e.key === 'Enter') loginHand
 /* ---------- logout ---------- */
 logoutBtn.addEventListener('click', () => {
   localStorage.removeItem('eanotes_user');
-  // reset UI
   loginName.value = '';
   loginPassword.value = '';
   showDashboard(false);
 });
 
 /* ---------- upload logic ---------- */
-/* Upload button triggers hidden file input */
 uploadBtn.addEventListener('click', () => {
   realFileInput.click();
 });
 
-/* When file chosen, show uploading row immediately and perform upload */
 realFileInput.addEventListener('change', async (ev) => {
   const file = ev.target.files && ev.target.files[0];
   if(!file) return;
 
-  // ensure teacher
   const raw = localStorage.getItem('eanotes_user');
   const user = raw ? JSON.parse(raw) : null;
   if(!user || user.role !== 'teacher'){
@@ -178,24 +159,18 @@ realFileInput.addEventListener('change', async (ev) => {
   }
 
   const subject = subjectSelect.value || 'General';
-
-  // create an uploading row
   const place = createUploadingRow(file.name, subject);
 
   try{
-    // build path
     const safe = encodeURIComponent(file.name.replace(/\s+/g,'_'));
     const path = `${subject}/${Date.now()}_${safe}`;
 
-    // upload (no native progress callback in this SDK)
-    const { data: upData, error: upErr } = await supabase.storage.from('files').upload(path, file, { upsert:true });
+    const { data: upData, error: upErr } = await sb.storage.from('files').upload(path, file, { upsert:true });
     if(upErr) throw upErr;
 
-    // get public url
-    const { data: urlData } = supabase.storage.from('files').getPublicUrl(path);
+    const { data: urlData } = sb.storage.from('files').getPublicUrl(path);
     const publicUrl = urlData?.publicUrl || '';
 
-    // insert DB row
     const insertObj = {
       name: file.name,
       subject,
@@ -204,22 +179,20 @@ realFileInput.addEventListener('change', async (ev) => {
       created_at: new Date().toISOString()
     };
 
-    const { data: insData, error: insErr } = await supabase.from('files').insert([insertObj]).select().limit(1).single();
+    const { data: insData, error: insErr } = await sb.from('files').insert([insertObj]).select().limit(1).single();
     if(insErr) throw insErr;
 
-    // update uploading row to final item
     place.done(insData);
   }catch(err){
     console.error('upload err', err);
     place.fail();
     alert('Upload failed: ' + (err.message || JSON.stringify(err)));
   } finally {
-    // clear input so same file can be selected again
     ev.target.value = '';
   }
 });
 
-/* create uploading row in UI and return helpers to update it */
+/* create uploading row */
 function createUploadingRow(filename, subject){
   const row = document.createElement('div');
   row.className = 'file-row uploading';
@@ -231,12 +204,10 @@ function createUploadingRow(filename, subject){
     </div>
     <div class="file-actions"></div>
   `;
-  // insert at top
   fileList.prepend(row);
 
   const bar = row.querySelector('.progress > b');
 
-  // animate progress visually to keep user engaged
   let pct = 8;
   const t = setInterval(()=> {
     pct = Math.min(92, pct + Math.random()*12);
@@ -247,7 +218,6 @@ function createUploadingRow(filename, subject){
     done(data){
       clearInterval(t);
       bar.style.width = '100%';
-      // replace row content with final display
       row.innerHTML = `
         <div class="file-meta">
           <div class="file-title">${escapeHtml(data.name)}</div>
@@ -258,13 +228,12 @@ function createUploadingRow(filename, subject){
           <button class="btn-delete">Delete</button>
         </div>
       `;
-      // attach handlers
       row.querySelector('.btn-view').addEventListener('click', ()=> openPdf(data.url, data.name));
       row.querySelector('.btn-delete').addEventListener('click', async ()=>{
         if(!confirm('Delete this file?')) return;
         try{
-          await supabase.from('files').delete().eq('id', data.id);
-          if(data.path) await supabase.storage.from('files').remove([data.path]);
+          await sb.from('files').delete().eq('id', data.id);
+          if(data.path) await sb.storage.from('files').remove([data.path]);
           row.remove();
         }catch(e){ alert('Delete failed: ' + (e.message || e)); }
       });
@@ -277,12 +246,12 @@ function createUploadingRow(filename, subject){
   };
 }
 
-/* ---------- loadFiles (by subject) ---------- */
+/* ---------- load files ---------- */
 async function loadFiles(){
   fileList.innerHTML = '<div class="muted">Loading files…</div>';
   const subject = subjectSelect.value || 'Anatomy';
   try{
-    const { data, error } = await supabase.from('files').select('*').eq('subject', subject).order('created_at', { ascending:false });
+    const { data, error } = await sb.from('files').select('*').eq('subject', subject).order('created_at', { ascending:false });
     if(error) throw error;
 
     fileList.innerHTML = '';
@@ -312,8 +281,8 @@ async function loadFiles(){
         div.querySelector('.btn-delete').addEventListener('click', async ()=>{
           if(!confirm('Delete this file?')) return;
           try{
-            await supabase.from('files').delete().eq('id', item.id);
-            if(item.path) await supabase.storage.from('files').remove([item.path]);
+            await sb.from('files').delete().eq('id', item.id);
+            if(item.path) await sb.storage.from('files').remove([item.path]);
             div.remove();
           }catch(e){ alert('Delete failed: ' + (e.message || e)); }
         });
@@ -326,7 +295,7 @@ async function loadFiles(){
   }
 }
 
-/* ---------- open PDF modal ---------- */
+/* ---------- PDF modal ---------- */
 function openPdf(url, name){
   pdfTitle.textContent = name;
   pdfFrame.src = url;
@@ -337,7 +306,7 @@ closePdf.addEventListener('click', ()=> { pdfModal.style.display = 'none'; pdfFr
 /* ---------- subject change reload ---------- */
 subjectSelect.addEventListener('change', loadFiles);
 
-/* ---------- user helpers ---------- */
+/* ---------- helpers ---------- */
 function getUserRole(){
   try{
     const raw = localStorage.getItem('eanotes_user');
@@ -348,23 +317,12 @@ function getUserRole(){
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function saveUser(obj){ localStorage.setItem('eanotes_user', JSON.stringify(obj)); }
 
-/* ---------- finish login (exposed to login button) ---------- */
-/* Called by loginHandler in index (we attach globally) */
-window.finishLogin = function(role, name){
-  // not used here; kept for compatibility
-};
-
-/* ---------- expose small API to login script ---------- */
+window.finishLogin = function(role, name){};
 window.appLoginSuccess = function(role, name){
-  // store session and show dashboard
   saveUser({ role, name });
   roleTag.textContent = role === 'teacher' ? 'Teacher' : 'Student';
   welcomeText.textContent = role === 'teacher' ? 'Welcome, Teacher' : `Welcome, ${name}`;
   if(role === 'teacher') controlsRow.classList.remove('hidden'); else controlsRow.classList.add('hidden');
   showDashboard(true);
-  // load initial subject files
   loadFiles();
 };
-
-/* ---------- use login button event defined earlier: attach direct mapping ---------- */
-/* The login button already uses loginHandler (above) which calls finishLogin via saveUser & finishLogin wrapper */
