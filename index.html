@@ -11,6 +11,7 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 
+  <!-- MAIN STYLE -->
   <style>
     :root {
       --bg:#f5f6fa;
@@ -40,6 +41,7 @@
       display:flex;
       justify-content:center;
       padding:20px;
+      transition:0.3s;
     }
 
     .app {
@@ -83,6 +85,31 @@
       margin-bottom:10px;
     }
 
+    /* ----------- LOADING OVERLAY ----------- */
+    #loadingOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 99999;
+    }
+
+    .spinner {
+      width: 65px;
+      height: 65px;
+      border: 7px solid #ffffff44;
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* PDF view */
     #pdfOverlay {
       display:none;
       position:fixed;
@@ -107,6 +134,11 @@
 </head>
 
 <body>
+
+<!-- LOADING ANIMATION -->
+<div id="loadingOverlay">
+  <div class="spinner"></div>
+</div>
 
 <div class="app">
   <h2>EA Notes Cloud</h2>
@@ -164,8 +196,7 @@
   </div>
 </div>
 
-<!-- ONLY ONE SCRIPT — THIS RUNS YOUR APP -->
+<!-- CONNECT JS -->
 <script src="script.js"></script>
-
 </body>
 </html>
