@@ -208,6 +208,9 @@ const storage = firebase.storage();
 /***************************************************
   DOM ELEMENTS
 ***************************************************/
+const passwordInput = document.getElementById("password");
+const usernameInput = document.getElementById("username");
+
 const loginArea = document.getElementById("loginArea");
 const mainArea = document.getElementById("mainArea");
 const btnLogin = document.getElementById("btnLogin");
@@ -233,8 +236,8 @@ const TEACHER_PASS = "@teacher123";
 const STUDENT_PASS = "@armyamanu";
 
 btnLogin.onclick = async () => {
-  const pass = document.getElementById("password").value.trim();
-  const name = document.getElementById("username").value.trim();
+  const pass = passwordInput.value.trim();
+  const name = usernameInput.value.trim();
 
   if(pass === TEACHER_PASS) currentRole = "teacher";
   else if(pass === STUDENT_PASS){
@@ -251,6 +254,10 @@ btnLogin.onclick = async () => {
     const res = await firebase.auth().signInAnonymously();
     await db.collection("users").doc(res.user.uid).set({ name, role: currentRole }, { merge:true });
     loadFiles();
+  } catch(err){
+    alert("Login error: " + err.message);
+  }
+}();
   } catch(err){
     alert("Login error: " + err.message);
   }
