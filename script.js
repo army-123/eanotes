@@ -1,152 +1,179 @@
-// Initialize Supabase client
-const sb = supabase.createClient(
-  "https://hlstgluwamsuwqlctdzk.supabase.co",
-  "YOUR_PUBLIC_ANON_KEY_HERE"
-);
+/* =========================
+   EA NOTES CLOUD - script.js
+   Final working version
+   ========================= */
 
-// DOM Elements
-const loginSection = document.getElementById("loginSection");
-const dashboardSection = document.getElementById("dashboard");
-const uploadBtn = document.getElementById("uploadBtn");
-const logoutBtn = document.getElementById("logoutBtn");
-const subjectSelect = document.getElementById("subjectSelect");
-const fileList = document.getElementById("fileList");
-const chooseFileBtn = document.getElementById("chooseFileBtn");
-const fileInput = document.getElementById("fileInput");
+/* ---------- Supabase config ---------- */
+const SUPABASE_URL = "https://hlstgluwamsuuqlctdzk.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhsc3RnbHV3YW1zdXVxbGN0ZHprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyNzMwMzQsImV4cCI6MjA3OTg0OTAzNH0.KUPx3pzrcd3H5aEx2B7mFosWNUVOEzXDD5gL-TmyawQ";
 
-// AUTH STATE CHECK
-sb.auth.onAuthStateChange(async (_event, session) => {
-  if (session) {
-    showDashboard();
-    loadFiles();
-  } else {
-    showLogin();
-  }
-});
+/* Create Supabase client */
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-function showLogin() {
-  loginSection.classList.remove("hidden");
-  dashboardSection.classList.add("hidden");
-}
+/* ---------- DOM ---------- */
+const loginBox = document.getElementById('loginBox');
+const loginName = document.getElementById('loginName');
+const loginPassword = document.getElementById('loginPassword');
+const btnLogin = document.getElementById('btnLogin');
+const loginFeedback = document.getElementById('loginFeedback');
 
-function showDashboard() {
-  loginSection.classList.add("hidden");
-  dashboardSection.classList.remove("hidden");
-}
+const dashboard = document.getElementById('dashboard');
+const roleTag = document.getElementById('roleTag');
+const welcomeText = document.getElementById('welcomeText');
+const uploadBtn = document.getElementById('uploadBtn');
+const realFileInput = document.getElementById('realFileInput');
+const fileList = document.getElementById('fileList');
+const subjectSelect = document.getElementById('subjectSelect');
+const logoutBtn = document.getElementById('logoutBtn');
 
-// LOGIN FUNCTION
-async function loginUser() {
-  const email = document.getElementById("loginEmail").value.trim();
-  const password = document.getElementById("loginPassword").value.trim();
+/* ---------- Login Logic ---------- */
+btnLogin.addEventListener("click", loginHandler);
+loginPassword.addEventListener("keyup", e => { if (e.key === "Enter") loginHandler(); });
 
-  const { error } = await sb.auth.signInWithPassword({ email, password });
+function loginHandler() {
+    const name = loginName.value.trim();
+    const pw = loginPassword.value.trim();
 
-  if (error) alert(error.message);
-}
-
-// LOGOUT
-logoutBtn.addEventListener("click", async () => {
-  await sb.auth.signOut();
-  showLogin();
-});
-
-// CHOOSE FILE BUTTON
-chooseFileBtn.addEventListener("click", () => fileInput.click());
-
-// UPLOAD FILE HANDLER
-uploadBtn.addEventListener("click", async () => {
-  const file = fileInput.files[0];
-  const subject = subjectSelect.value;
-
-  if (!file) return alert("Please select a file");
-  if (!subject) return alert("Select a subject");
-
-  const fileName = `${Date.now()}_${file.name}`;
-  const path = `${subject}/${fileName}`;
-
-  // FIXED: Correct bucket name "FILES"
-  const { error: upErr } = await sb.storage
-    .from("FILES")
-    .upload(path, file, { upsert: true });
-
-  if (upErr) {
-    alert("Upload failed: " + upErr.message);
-    return;
-  }
-
-  // FIXED: Correct bucket name for public URL
-  const { data: urlData } = sb.storage
-    .from("FILES")
-    .getPublicUrl(path);
-
-  const publicUrl = urlData.publicUrl;
-
-  // Insert record in DB
-  const { error: dbErr } = await sb.from("files").insert([
-    {
-      name: file.name,
-      subject: subject,
-      url: publicUrl,
-      path: path
+    if (!name || !pw) {
+        loginFeedback.textContent = "Enter both username and password";
+        loginFeedback.style.color = "red";
+        return;
     }
-  ]);
 
-  if (dbErr) {
-    alert("Database error: " + dbErr.message);
-    return;
-  }
+    if (pw === "@armyamanu") {
+        finishLogin("student", name);
+        return;
+    }
+    if (pw === "@teacher123") {
+        finishLogin("teacher", name);
+        return;
+    }
 
-  alert("Upload successful!");
-  fileInput.value = "";
-  loadFiles();
-});
-
-// LOAD FILES FROM DB
-async function loadFiles() {
-  const subject = subjectSelect.value;
-
-  let query = sb.from("files").select("*");
-
-  if (subject !== "all") {
-    query = query.eq("subject", subject);
-  }
-
-  const { data, error } = await query.order("created_at", { ascending: false });
-
-  if (error) {
-    console.error(error);
-    return;
-  }
-
-  fileList.innerHTML = "";
-
-  data.forEach(item => {
-    const fileItem = document.createElement("div");
-    fileItem.className = "file-item";
-
-    fileItem.innerHTML = `
-      <div class="file-info">
-        <p class="file-name">${item.name}</p>
-        <a class="file-link" href="${item.url}" target="_blank">Open</a>
-      </div>
-      <button class="delete-btn" data-path="${item.path}">Delete</button>
-    `;
-
-    fileList.appendChild(fileItem);
-  });
-
-  // Delete Event Listeners
-  document.querySelectorAll(".delete-btn").forEach(btn => {
-    btn.addEventListener("click", async () => {
-      const path = btn.getAttribute("data-path");
-
-      // FIXED: Correct bucket name "FILES"
-      await sb.storage.from("FILES").remove([path]);
-
-      await sb.from("files").delete().eq("path", path);
-
-      loadFiles();
-    });
-  });
+    loginFeedback.textContent = "Incorrect password";
+    loginFeedback.style.color = "red";
 }
 
+function finishLogin(role, name) {
+    roleTag.textContent = role;
+    welcomeText.textContent = `Welcome, ${name}`;
+
+    // Show upload button only for teacher
+    uploadBtn.style.display = (role === "teacher") ? "inline-flex" : "none";
+
+    localStorage.setItem("eanotes_user", JSON.stringify({ role, name }));
+
+    loginBox.style.display = "none";
+    dashboard.style.display = "block";
+
+    loadFiles();
+}
+
+/* Auto-login if session exists */
+(function autoLogin() {
+    const saved = localStorage.getItem("eanotes_user");
+    if (saved) {
+        const user = JSON.parse(saved);
+        finishLogin(user.role, user.name);
+    }
+})();
+
+/* ---------- Logout ---------- */
+logoutBtn.addEventListener("click", () => {
+    localStorage.removeItem("eanotes_user");
+    dashboard.style.display = "none";
+    loginBox.style.display = "block";
+});
+
+/* ---------- Upload File ---------- */
+uploadBtn.addEventListener("click", () => realFileInput.click());
+
+realFileInput.addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const user = JSON.parse(localStorage.getItem("eanotes_user"));
+    if (user.role !== "teacher") {
+        alert("Only teacher can upload files");
+        return;
+    }
+
+    const subject = subjectSelect.value;
+    const fileName = `${Date.now()}_${file.name.replace(/\s+/g, "_")}`;
+    const path = `${subject}/${fileName}`;
+
+    // ⭐ FIXED: Correct bucket name (FILES)
+    const { error: uploadErr } = await sb.storage
+        .from("FILES")
+        .upload(path, file, { upsert: true });
+
+    if (uploadErr) {
+        alert("Upload failed: " + uploadErr.message);
+        return;
+    }
+
+    // ⭐ FIXED: Correct public URL retrieval
+    const { data: urlData } = sb.storage.from("FILES").getPublicUrl(path);
+    const publicUrl = urlData.publicUrl;
+
+    // Insert DB record
+    const { error: dbErr } = await sb.from("files").insert([
+        { name: file.name, subject, url: publicUrl, path }
+    ]);
+
+    if (dbErr) {
+        alert("Insert failed: " + dbErr.message);
+        return;
+    }
+
+    alert("Upload complete!");
+    realFileInput.value = "";
+    loadFiles();
+});
+
+/* ---------- Load Files ---------- */
+async function loadFiles() {
+    fileList.innerHTML = "<p>Loading...</p>";
+
+    const subject = subjectSelect.value;
+
+    let query = sb.from("files").select("*");
+
+    if (subject !== "all") {
+        query = query.eq("subject", subject);
+    }
+
+    const { data, error } = await query.order("created_at", { ascending: false });
+
+    if (error) {
+        fileList.innerHTML = "<p>Error loading files</p>";
+        return;
+    }
+
+    fileList.innerHTML = "";
+
+    data.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "file-item";
+
+        div.innerHTML = `
+            <p>${item.name} (${item.subject})</p>
+            <a href="${item.url}" target="_blank">Open</a>
+            <button class="deleteBtn" data-path="${item.path}">Delete</button>
+        `;
+
+        fileList.appendChild(div);
+    });
+
+    // Delete handlers
+    document.querySelectorAll(".deleteBtn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const path = btn.getAttribute("data-path");
+
+            // ⭐ FIXED DELETE BUCKET NAME
+            await sb.storage.from("FILES").remove([path]);
+            await sb.from("files").delete().eq("path", path);
+
+            loadFiles();
+        });
+    });
+}
