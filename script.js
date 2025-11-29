@@ -49,7 +49,7 @@ const closePdf = document.getElementById("closePdf");
 
 const themeToggle = document.getElementById("themeToggle");
 
-// ---- NEW: LOADING SCREEN ----
+// ---- LOADING SCREEN ----
 const loadingOverlay = document.getElementById("loadingOverlay");
 function showLoading() { loadingOverlay.style.display = "flex"; }
 function hideLoading() { loadingOverlay.style.display = "none"; }
@@ -76,12 +76,10 @@ btnLogin.onclick = async () => {
     let cred;
 
     if (val.includes("@")) {
-      // teacher login
       cred = await auth.signInWithEmailAndPassword(val, pass);
       await db.collection("users").doc(cred.user.uid).set({ role: "teacher" }, { merge: true });
       currentRole = "teacher";
     } else {
-      // student login
       cred = await auth.signInAnonymously();
       await db.collection("users").doc(cred.user.uid).set(
         { name: val, role: "student" },
@@ -124,4 +122,110 @@ async function loadFiles() {
   fileList.innerHTML = "Loading...";
 
   const snap = await db
-    .col
+    .collection("files")
+    .where("subject", "==", subject)
+    .orderBy("time", "desc")
+    .get();
+
+  filesCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  renderFiles();
+
+  hideLoading();
+}
+
+// --------------- RENDER FILES ----------------
+function renderFiles() {
+  const q = searchInput.value.toLowerCase();
+
+  const filtered = filesCache.filter(f => f.name.toLowerCase().includes(q));
+
+  if (filtered.length === 0) {
+    fileList.innerHTML = "No files found.";
+    return;
+  }
+
+  fileList.innerHTML = filtered
+    .map(
+      f => `
+    <div class="file-row">
+      <div>
+        <b>${f.name}</b><br>
+        <small>${(f.size / 1024).toFixed(1)} KB</small>
+      </div>
+      <div>
+        <button class="btn primary" onclick="previewPDF('${f.url}','${f.name}')">Preview</button>
+        ${
+          currentRole === "teacher"
+            ? `<button class="btn danger" onclick="deleteFile('${f.id}','${f.url}')">Delete</button>`
+            : ""
+        }
+      </div>
+    </div>
+  `
+    )
+    .join("");
+}
+
+// --------------- PREVIEW PDF ----------------
+window.previewPDF = (url, name) => {
+  pdfFrame.src = url;
+  pdfName.textContent = name;
+  pdfOverlay.style.display = "flex";
+};
+
+closePdf.onclick = () => {
+  pdfOverlay.style.display = "none";
+  pdfFrame.src = "";
+};
+
+// --------------- UPLOAD FILE ----------------
+fileUpload.onchange = async e => {
+  if (currentRole !== "teacher") return alert("Only teachers can upload.");
+
+  const file = e.target.files[0];
+  if (!file) return;
+
+  showLoading();
+
+  const subject = folderSelect.value;
+  const path = `files/${subject}/${Date.now()}_${file.name}`;
+  const ref = storage.ref().child(path);
+
+  await ref.put(file);
+  const url = await ref.getDownloadURL();
+
+  await db.collection("files").add({
+    subject,
+    name: file.name,
+    size: file.size,
+    url,
+    time: Date.now()
+  });
+
+  await loadFiles();
+  hideLoading();
+};
+
+// --------------- DELETE FILE ----------------
+window.deleteFile = async (id, url) => {
+  if (currentRole !== "teacher") return;
+
+  if (!confirm("Delete file?")) return;
+
+  showLoading();
+
+  await db.collection("files").doc(id).delete();
+
+  const path = decodeURIComponent(url.split("/o/")[1].split("?")[0]);
+  await storage.ref().child(path).delete();
+
+  await loadFiles();
+  hideLoading();
+};
+
+// --------------- EVENTS ----------------
+btnRefresh.onclick = loadFiles;
+folderSelect.onchange = loadFiles;
+searchInput.oninput = renderFiles;
+
+console.log("Listeners attached ✔");
