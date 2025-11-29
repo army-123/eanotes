@@ -1,13 +1,13 @@
 /* =========================
    EA NOTES CLOUD - script.js
-   Fixed version (Supabase client name corrected)
+   Final fixed version
    ========================= */
 
 /* ---------- Supabase config ---------- */
 const SUPABASE_URL = "https://hlstgluwamsuuqlctdzk.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhsc3RnbHV3YW1zdXVxbGN0ZHprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyNzMwMzQsImV4cCI6MjA3OTg0OTAzNH0.KUPx3pzrcd3H5aEx2B7mFosWNUVOEzXDD5gL-TmyawQ";
 
-/* ❗ FIX: DO NOT overwrite supabase — use sb instead */
+/* ❗ FIX: create client as sb (avoid overwriting global supabase) */
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
 /* ---------- DOM ---------- */
@@ -47,13 +47,8 @@ function setFeedback(msg, isErr=false){
   loginFeedback.style.color = isErr ? 'var(--danger)' : 'var(--muted)';
 }
 function showDashboard(show){
-  if(show){
-    loginBox.style.display = 'none';
-    dashboard.style.display = 'block';
-  } else {
-    loginBox.style.display = 'block';
-    dashboard.style.display = 'none';
-  }
+  loginBox.style.display = show ? 'none' : 'block';
+  dashboard.style.display = show ? 'block' : 'none';
 }
 
 /* ---------- Theme Toggle ---------- */
@@ -69,7 +64,7 @@ function showDashboard(show){
   headerRight.appendChild(themeButton);
 })();
 
-/* ---------- Login logic ---------- */
+/* ---------- Login Logic ---------- */
 async function loginHandler(){
   setFeedback('');
   const name = loginName.value.trim();
@@ -96,20 +91,16 @@ async function loginHandler(){
   showLoginLoading(false);
 }
 
-/* complete login */
 function finishLogin(role, name){
   roleTag.textContent = role === 'teacher' ? 'Teacher' : 'Student';
   welcomeText.textContent = role === 'teacher' ? 'Welcome, Teacher' : `Welcome, ${name}`;
   setFeedback('');
 
-  if(role === 'teacher'){
-    controlsRow.classList.remove('hidden');
-    uploadBtn.style.display = 'inline-flex';
-  } else {
-    controlsRow.classList.add('hidden');
-  }
+  /* ✅ FIX: Only hide upload button for student — nothing else */
+  uploadBtn.style.display = (role === 'teacher') ? 'inline-flex' : 'none';
 
   localStorage.setItem('eanotes_user', JSON.stringify({ role, name }));
+
   showDashboard(true);
   showLoginLoading(false);
   loadFiles();
@@ -129,7 +120,7 @@ loginPassword.addEventListener('keyup', e => { if(e.key === 'Enter') loginHandle
   }catch(e){}
 })();
 
-/* ---------- logout ---------- */
+/* ---------- Logout ---------- */
 logoutBtn.addEventListener('click', () => {
   localStorage.removeItem('eanotes_user');
   loginName.value = '';
@@ -144,8 +135,7 @@ realFileInput.addEventListener('change', async ev => {
   const file = ev.target.files?.[0];
   if(!file) return;
 
-  const raw = localStorage.getItem('eanotes_user');
-  const user = raw ? JSON.parse(raw) : null;
+  const user = JSON.parse(localStorage.getItem('eanotes_user'));
   if(!user || user.role !== 'teacher'){
     alert('Only teachers can upload');
     return;
@@ -158,12 +148,11 @@ realFileInput.addEventListener('change', async ev => {
     const safe = encodeURIComponent(file.name.replace(/\s+/g,'_'));
     const path = `${subject}/${Date.now()}_${safe}`;
 
-    /* ❗ FIX: use sb not supabase */
     const { error: upErr } = await sb.storage.from('files').upload(path, file, { upsert:true });
     if(upErr) throw upErr;
 
     const { data: urlData } = sb.storage.from('files').getPublicUrl(path);
-    const publicUrl = urlData?.publicUrl || '';
+    const publicUrl = urlData?.publicUrl;
 
     const insertObj = {
       name: file.name,
@@ -175,6 +164,7 @@ realFileInput.addEventListener('change', async ev => {
 
     const { data: insData, error: insErr } =
       await sb.from('files').insert([insertObj]).select().single();
+
     if(insErr) throw insErr;
 
     place.done(insData);
@@ -188,7 +178,7 @@ realFileInput.addEventListener('change', async ev => {
   }
 });
 
-/* uploading row */
+/* ---------- Upload UI Row ---------- */
 function createUploadingRow(filename, subject){
   const row = document.createElement('div');
   row.className = 'file-row uploading';
@@ -280,7 +270,7 @@ async function loadFiles(){
   }
 }
 
-/* delete handler */
+/* ---------- Delete ---------- */
 async function deleteFile(item, div){
   if(!confirm('Delete this file?')) return;
   try{
@@ -315,5 +305,6 @@ function getUserRole(){
   }
 }
 function escapeHtml(s){
-  return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  return String(s||'').replace(/[&<>"']/g,
+    c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
