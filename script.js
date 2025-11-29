@@ -6,7 +6,6 @@
 const SUPABASE_URL = "https://hlstgluwamsuuqlctdzk.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhsc3RnbHV3YW1zdXVxbGN0ZHprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyNzMwMzQsImV4cCI6MjA3OTg0OTAzNH0.KUPx3pzrcd3H5aEx2B7mFosWNUVOEzXDD5gL-TmyawQ";
 
-/*  FIXED HERE — use window.supabase to avoid overwriting the global SDK  */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
 /* ---------- DOM ---------- */
@@ -165,7 +164,7 @@ realFileInput.addEventListener('change', async (ev) => {
     const safe = encodeURIComponent(file.name.replace(/\s+/g,'_'));
     const path = `${subject}/${Date.now()}_${safe}`;
 
-    const { data: upData, error: upErr } = await sb.storage.from('files').upload(path, file, { upsert:true });
+    const { error: upErr } = await sb.storage.from('files').upload(path, file, { upsert:true });
     if(upErr) throw upErr;
 
     const { data: urlData } = sb.storage.from('files').getPublicUrl(path);
@@ -179,7 +178,11 @@ realFileInput.addEventListener('change', async (ev) => {
       created_at: new Date().toISOString()
     };
 
-    const { data: insData, error: insErr } = await sb.from('files').insert([insertObj]).select().limit(1).single();
+    /* FIX APPLIED HERE ↓↓↓ */
+    const { data: insData, error: insErr } =
+      await sb.from('public.files').insert([insertObj]).select().limit(1).single();
+    /* FIX APPLIED HERE ↑↑↑ */
+
     if(insErr) throw insErr;
 
     place.done(insData);
@@ -232,7 +235,10 @@ function createUploadingRow(filename, subject){
       row.querySelector('.btn-delete').addEventListener('click', async ()=>{
         if(!confirm('Delete this file?')) return;
         try{
-          await sb.from('files').delete().eq('id', data.id);
+          /* FIX APPLIED HERE ↓↓↓ */
+          await sb.from('public.files').delete().eq('id', data.id);
+          /* FIX APPLIED HERE ↑↑↑ */
+
           if(data.path) await sb.storage.from('files').remove([data.path]);
           row.remove();
         }catch(e){ alert('Delete failed: ' + (e.message || e)); }
@@ -251,7 +257,14 @@ async function loadFiles(){
   fileList.innerHTML = '<div class="muted">Loading files…</div>';
   const subject = subjectSelect.value || 'Anatomy';
   try{
-    const { data, error } = await sb.from('files').select('*').eq('subject', subject).order('created_at', { ascending:false });
+    /* FIX APPLIED HERE ↓↓↓ */
+    const { data, error } =
+      await sb.from('public.files')
+        .select('*')
+        .eq('subject', subject)
+        .order('created_at', { ascending:false });
+    /* FIX APPLIED HERE ↑↑↑ */
+
     if(error) throw error;
 
     fileList.innerHTML = '';
@@ -281,7 +294,10 @@ async function loadFiles(){
         div.querySelector('.btn-delete').addEventListener('click', async ()=>{
           if(!confirm('Delete this file?')) return;
           try{
-            await sb.from('files').delete().eq('id', item.id);
+            /* FIX APPLIED HERE ↓↓↓ */
+            await sb.from('public.files').delete().eq('id', item.id);
+            /* FIX APPLIED HERE ↑↑↑ */
+
             if(item.path) await sb.storage.from('files').remove([item.path]);
             div.remove();
           }catch(e){ alert('Delete failed: ' + (e.message || e)); }
@@ -314,15 +330,18 @@ function getUserRole(){
     return JSON.parse(raw).role;
   }catch(e){ return null; }
 }
-function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,
+  c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c])); }
 function saveUser(obj){ localStorage.setItem('eanotes_user', JSON.stringify(obj)); }
 
 window.finishLogin = function(role, name){};
 window.appLoginSuccess = function(role, name){
   saveUser({ role, name });
   roleTag.textContent = role === 'teacher' ? 'Teacher' : 'Student';
-  welcomeText.textContent = role === 'teacher' ? 'Welcome, Teacher' : `Welcome, ${name}`;
-  if(role === 'teacher') controlsRow.classList.remove('hidden'); else controlsRow.classList.add('hidden');
+  welcomeText.textContent =
+    role === 'teacher' ? 'Welcome, Teacher' : `Welcome, ${name}`;
+  if(role === 'teacher') controlsRow.classList.remove('hidden');
+  else controlsRow.classList.add('hidden');
   showDashboard(true);
   loadFiles();
 };
