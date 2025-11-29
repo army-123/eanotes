@@ -5,36 +5,70 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>EA Notes Cloud</title>
 
-<!-- Supabase client -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
 <style>
-:root{ --bg:#0f1724; --card:#0b1220; --text:#e6eefc; --muted:#9aa8c7; --accent:#3b82f6; --danger:#dc2626; }
-body.light{ --bg:#f6f8ff; --card:#fff; --text:#0b1220; --muted:#6b7280; --accent:#2563eb; }
-*{box-sizing:border-box}
-body{ margin:0; background:var(--bg); color:var(--text); font-family:Inter,system-ui,Arial; padding:20px; min-height:100vh; display:flex; align-items:center; justify-content:center; }
-.container{ width:920px; max-width:100%; background:var(--card); border-radius:12px; padding:18px; box-shadow:0 10px 30px rgba(0,0,0,0.45); }
-.header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
-h1{ margin:0; } .muted{ color:var(--muted); font-size:13px; }
+:root{
+  --bg:#0f1724; --card:#0b1220; --text:#e6eefc; --muted:#9aa8c7; 
+  --accent:#3b82f6; --danger:#dc2626;
+}
+body.light{ --bg:#f6f8ff; --card:#ffffff; --text:#0b1220; --muted:#6b7280; --accent:#2563eb; }
 
-.section{ background:rgba(255,255,255,0.03); padding:14px; border-radius:10px; margin-top:12px; }
-label{ display:block; margin-top:8px; font-size:13px; color:var(--muted); }
-input{ width:100%; padding:10px; margin-top:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.06); background:transparent; color:var(--text); }
-button{ padding:10px 12px; border-radius:8px; border:0; cursor:pointer; font-weight:600; }
-.btn-primary{ background:var(--accent); color:white; }
-.btn-ghost{ background:transparent; border:1px solid var(--accent); color:var(--accent); }
-.btn-danger{ background:var(--danger); color:white; }
+*{box-sizing:border-box;}
+body{
+  margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui;
+  padding:20px;min-height:100vh;display:flex;align-items:center;justify-content:center;
+}
 
-#loadingOverlay{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:9999; align-items:center; justify-content:center; }
-.spinner{ width:56px; height:56px; border:6px solid rgba(255,255,255,0.15); border-top-color:white; border-radius:50%; animation:spin .8s linear infinite; }
-@keyframes spin{ to{ transform:rotate(360deg); } }
+.container{
+  width:920px;max-width:100%;background:var(--card);border-radius:12px;
+  padding:18px;box-shadow:0 10px 30px rgba(0,0,0,0.45);
+}
 
-.fileRow{ display:flex; justify-content:space-between; gap:12px; padding:10px; border-radius:8px; background:rgba(255,255,255,0.02); margin-top:10px; align-items:center; }
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+h1{margin:0;} .muted{color:var(--muted);font-size:13px;}
 
-.pdf-overlay{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.86); z-index:9998; align-items:center; justify-content:center; }
-.pdf-box{ width:92%; height:92%; background:white; border-radius:10px; display:flex; flex-direction:column; overflow:hidden; }
-.pdf-frame{ flex:1; border:0; }
+.section{
+  background:rgba(255,255,255,0.03);padding:14px;border-radius:10px;margin-top:12px;
+}
 
+label{display:block;margin-top:8px;font-size:13px;color:var(--muted);}
+input{
+  width:100%;padding:10px;margin-top:8px;border-radius:8px;
+  border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--text);
+}
+
+button{
+  padding:10px 12px;border-radius:8px;border:0;cursor:pointer;font-weight:600;
+}
+.btn-primary{background:var(--accent);color:white;}
+.btn-danger{background:var(--danger);color:white;}
+.btn-ghost{background:transparent;border:1px solid var(--accent);color:var(--accent);}
+
+#loadingOverlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);
+  z-index:999;align-items:center;justify-content:center;
+}
+.spinner{
+  width:40px;height:40px;border:4px solid rgba(255,255,255,0.2);
+  border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.fileRow{
+  display:flex;justify-content:space-between;gap:12px;padding:10px;border-radius:8px;
+  background:rgba(255,255,255,0.02);margin-top:10px;align-items:center;
+}
+
+.pdf-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.86);
+  z-index:9998;align-items:center;justify-content:center;
+}
+.pdf-box{
+  width:92%;height:92%;background:white;border-radius:10px;
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.pdf-frame{flex:1;border:0;}
 </style>
 </head>
 <body>
@@ -43,41 +77,37 @@ button{ padding:10px 12px; border-radius:8px; border:0; cursor:pointer; font-wei
 
 <div class="container">
 
-  <!-- HEADER -->
   <div class="header">
     <div>
       <h1>EA Notes Cloud</h1>
       <div class="muted">Simple Login — Password Decides Role</div>
     </div>
-
-    <!-- Remove email — only show Teacher / Student -->
     <button id="themeToggle" class="btn-ghost">🌙</button>
   </div>
 
-  <!-- LOGIN AREA -->
+  <!-- LOGIN ONLY -->
   <div class="section" id="loginSection">
     <label>Username / Email</label>
-    <input id="username" placeholder="Student name or teacher email" autocomplete="off">
+    <input id="username" autocomplete="off" placeholder="Enter username or email">
 
     <label>Password</label>
-    <input id="password" type="password" placeholder="Enter password" autocomplete="new-password">
+    <input id="password" type="password" autocomplete="new-password" placeholder="Enter password">
 
-    <div style="display:flex;gap:8px;margin-top:12px;">
-      <button id="loginBtn" type="button" class="btn-primary" style="flex:1">Login</button>
-      <button id="quickBtn" type="button" class="btn-ghost">Quick</button>
-    </div>
+    <button id="loginBtn" class="btn-primary" style="margin-top:12px;width:100%;">Login</button>
 
     <div id="loginMsg" class="muted" style="margin-top:10px"></div>
 
-    <!-- LOGOUT INSIDE LOGIN SECTION -->
-    <button id="logoutBtn" class="btn-danger" style="margin-top:12px; display:none;">Logout</button>
+    <button id="logoutBtn" class="btn-danger" style="margin-top:12px;display:none;">
+      Logout
+    </button>
   </div>
 
-  <!-- THESE SECTIONS ARE HIDDEN UNTIL LOGIN -->
+  <!-- HIDDEN SECTIONS APPEAR AFTER LOGIN -->
   <div class="section" id="uploadSection" style="display:none;">
     <label>Subject</label>
     <select id="subjectSelect">
-      <option>Anatomy</option><option>History</option><option>Geography</option><option>Psychology</option><option>Mathematics</option>
+      <option>Anatomy</option><option>History</option><option>Geography</option>
+      <option>Psychology</option><option>Mathematics</option>
     </select>
 
     <div style="display:flex;gap:8px;margin-top:10px;">
@@ -86,8 +116,8 @@ button{ padding:10px 12px; border-radius:8px; border:0; cursor:pointer; font-wei
       <button id="uploadBtn" class="btn-primary">Upload</button>
     </div>
 
-    <div id="uploadInfo" class="muted" style="margin-top:10px; display:none;">
-      Uploading... <span id="uploadPercent">0%</span>
+    <div id="uploadInfo" class="muted" style="margin-top:10px;display:none;">
+      Uploading… <span id="uploadPercent">0%</span>
     </div>
   </div>
 
@@ -98,7 +128,6 @@ button{ padding:10px 12px; border-radius:8px; border:0; cursor:pointer; font-wei
 
 </div>
 
-<!-- PDF VIEWER -->
 <div class="pdf-overlay" id="pdfOverlay">
   <div class="pdf-box">
     <div style="display:flex;justify-content:space-between;padding:10px;border-bottom:1px solid #eee;">
