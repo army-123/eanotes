@@ -9,11 +9,12 @@
 
 <!-- Supabase client -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- FIXED !!!  -->
+<script src="script.js" defer></script>
 </head>
 
 <body>
-
-<!-- ---------------------- LOGIN PAGE ----------------------- -->
 
 <div id="loginBox" class="card">
     <h2>EA Notes Cloud</h2>
@@ -27,14 +28,10 @@
     <p id="loginFeedback" class="feedback"></p>
 </div>
 
-<!-- ---------------------- DASHBOARD ------------------------ -->
-
 <div id="dashboard" class="card hidden">
-
     <h2 id="welcomeText"></h2>
     <p class="role">Role: <span id="roleTag"></span></p>
 
-    <!-- Subject selector -->
     <select id="subjectSelect">
         <option value="Anatomy">Anatomy</option>
         <option value="History">History</option>
@@ -42,19 +39,13 @@
         <option value="Physics">Physics</option>
     </select>
 
-    <!-- Upload button (teacher only) -->
     <button id="uploadBtn">Upload PDF</button>
     <input id="realFileInput" type="file" accept="application/pdf" hidden>
 
-    <!-- File list -->
     <div id="fileList" class="file-list"></div>
 
-    <!-- Logout -->
     <button id="logoutBtn" class="logout">Logout</button>
 </div>
-
-<!-- Your JS -->
-<script src="script.js"></script>
 
 </body>
 </html>
