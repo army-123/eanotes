@@ -235,7 +235,10 @@ let currentRole = null;
 const TEACHER_PASS = "@teacher123";
 const STUDENT_PASS = "@armyamanu";
 
-btnLogin.onclick = async () => {
+// FIX: Ensure event listener attaches AFTER DOM loads
+btnLogin.addEventListener("click", async () => {
+  console.log("LOGIN CLICKED"); // Debug
+
   const pass = passwordInput.value.trim();
   const name = usernameInput.value.trim();
 
@@ -257,12 +260,7 @@ btnLogin.onclick = async () => {
   } catch(err){
     alert("Login error: " + err.message);
   }
-}();
-  } catch(err){
-    alert("Login error: " + err.message);
-  }
-}();
-};
+});
 
 /***************************************************
   LOGOUT
