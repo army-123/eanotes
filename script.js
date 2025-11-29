@@ -11,8 +11,8 @@ const dashboard = document.getElementById("dashboard");
 
 const loginName = document.getElementById("loginName");
 const loginPassword = document.getElementById("loginPassword");
-const loginFeedback = document.getElementById("loginFeedback");
 const btnLogin = document.getElementById("btnLogin");
+const loginFeedback = document.getElementById("loginFeedback");
 
 const uploadBtn = document.getElementById("uploadBtn");
 const realFileInput = document.getElementById("realFileInput");
@@ -43,7 +43,7 @@ btnLogin.onclick = () => {
     }
 
     roleTag.textContent = currentUser.role;
-    welcomeText.textContent = "Welcome, " + currentUser.name;
+    welcomeText.textContent = `Welcome, ${currentUser.name}`;
 
     uploadBtn.style.display = currentUser.role === "teacher" ? "block" : "none";
 
@@ -76,7 +76,7 @@ realFileInput.onchange = async () => {
     const newName = Date.now() + "_" + file.name.replace(/\s+/g, "_");
     const path = `${subject}/${newName}`;
 
-    /* Create progress UI */
+    /* Progress UI */
     const box = document.createElement("div");
     box.className = "progress-box";
     box.innerHTML = `
@@ -87,16 +87,16 @@ realFileInput.onchange = async () => {
     fileList.prepend(box);
 
     /* Chunk upload */
-    const chunk = 200 * 1024;
+    const chunkSize = 200 * 1024;
     let uploaded = 0;
 
     while (uploaded < file.size) {
-        const part = file.slice(uploaded, uploaded + chunk);
+        const chunk = file.slice(uploaded, uploaded + chunkSize);
+
         const { error } = await sb.storage
-            .from("FILES")
-            .upload(path, part, {
+            .from("files")   // FIXED BUCKET NAME
+            .upload(path, chunk, {
                 upsert: true,
-                contentType: file.type,
                 metadata: { offset: uploaded }
             });
 
@@ -106,40 +106,49 @@ realFileInput.onchange = async () => {
             return;
         }
 
-        uploaded += chunk;
+        uploaded += chunkSize;
+
         const p = Math.min(100, Math.floor((uploaded / file.size) * 100));
         box.querySelector("#bar").style.width = p + "%";
         box.querySelector("#pct").textContent = p + "%";
     }
 
     /* Public URL */
-    const { data: urlData } = sb.storage.from("FILES").getPublicUrl(path);
+    const { data: urlData } = sb.storage.from("files").getPublicUrl(path);
 
-    /* Insert into DB */
+    /* Insert DB record */
     await sb.from("files").insert([
         { name: file.name, subject, url: urlData.publicUrl, path }
     ]);
 
-    /* Replace progress with real file */
+    /* Replace progress with actual file */
     box.remove();
+    displayFile({ name: file.name, url: urlData.publicUrl, path });
+};
 
+/* ---------- DISPLAY FILE ---------- */
+function displayFile(item) {
     const row = document.createElement("div");
     row.className = "file-item";
     row.innerHTML = `
-        <span>${file.name}</span>
+        <span>${item.name}</span>
         <div>
-            <a href="${urlData.publicUrl}" target="_blank">Open</a>
-            <button class="deleteBtn" data-path="${path}">Delete</button>
+            <a href="${item.url}" target="_blank">Open</a>
+            ${currentUser.role === "teacher"
+                ? `<button class="deleteBtn" data-path="${item.path}">Delete</button>`
+                : ""}
         </div>
     `;
     fileList.prepend(row);
 
-    row.querySelector(".deleteBtn").onclick = async () => {
-        await sb.storage.from("FILES").remove([path]);
-        await sb.from("files").delete().eq("path", path);
-        row.remove();
-    };
-};
+    if (currentUser.role === "teacher") {
+        row.querySelector(".deleteBtn").onclick = async () => {
+            await sb.storage.from("files").remove([item.path]);
+            await sb.from("files").delete().eq("path", item.path);
+            row.remove();
+        };
+    }
+}
 
 /* ---------- LOAD FILES ---------- */
 async function loadFiles() {
@@ -147,41 +156,12 @@ async function loadFiles() {
 
     const subject = subjectSelect.value;
 
-    const { data, error } = await sb
+    const { data } = await sb
         .from("files")
         .select("*")
         .eq("subject", subject);
 
-    if (error) {
-        fileList.innerHTML = "Error loading files";
-        return;
-    }
-
     fileList.innerHTML = "";
 
-    data.forEach(item => {
-        const row = document.createElement("div");
-        row.className = "file-item";
-        row.innerHTML = `
-            <span>${item.name}</span>
-            <div>
-                <a href="${item.url}" target="_blank">Open</a>
-                ${
-                    currentUser.role === "teacher"
-                    ? `<button class="deleteBtn" data-path="${item.path}">Delete</button>`
-                    : ""
-                }
-            </div>
-        `;
-
-        fileList.appendChild(row);
-
-        if (currentUser.role === "teacher") {
-            row.querySelector(".deleteBtn").onclick = async () => {
-                await sb.storage.from("FILES").remove([item.path]);
-                await sb.from("files").delete().eq("path", item.path);
-                row.remove();
-            };
-        }
-    });
+    data.forEach(displayFile);
 }

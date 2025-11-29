@@ -16,16 +16,14 @@ body {
     text-align: center;
 }
 
-.hidden {
-    display: none;
-}
+.hidden { display: none; }
 
 input, select {
     width: 100%;
     padding: 12px;
     margin: 10px 0;
-    border: none;
     border-radius: 6px;
+    border: none;
 }
 
 button {
@@ -36,17 +34,9 @@ button {
     border-radius: 6px;
     color: black;
     font-weight: bold;
-    cursor: pointer;
 }
 
-button:hover {
-    background: #0fa88f;
-}
-
-.file-list {
-    margin-top: 20px;
-    text-align: left;
-}
+.file-list { margin-top: 20px; text-align: left; }
 
 .file-item {
     background: #26464d;
@@ -57,38 +47,28 @@ button:hover {
     justify-content: space-between;
 }
 
-.file-item a {
-    color: #1ad4f7;
-}
-
 .deleteBtn {
     background: #e64343;
-    color: white;
-    border: none;
     padding: 6px 10px;
     border-radius: 6px;
+    border: none;
+    color: white;
 }
 
-.logout {
-    background: #d9534f;
-}
+.logout { background: #d9534f; }
 
-.feedback {
-    color: #ff6b6b;
-}
-
-/* UPLOAD PROGRESS */
+/* Upload progress */
 .progress-box {
-    background: #26464d;
     padding: 12px;
+    background: #26464d;
     border-radius: 6px;
     margin-bottom: 10px;
 }
 
 .progress-bar {
     height: 8px;
-    background: #1ad4f7;
     width: 0%;
+    background: #1ad4f7;
     border-radius: 4px;
     transition: width 0.2s;
 }
