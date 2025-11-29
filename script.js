@@ -9,16 +9,13 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 /* =====================
    ELEMENTS
    ===================== */
-const roleSelect = document.getElementById('roleSelect');
-const labelUser = document.getElementById('labelUser');
 const usernameEl = document.getElementById('username');
 const passwordEl = document.getElementById('password');
 const loginBtn = document.getElementById('loginBtn');
 const quickBtn = document.getElementById('quickBtn');
-const loginMsg = document.getElementById('loginMsg');
 const logoutBtn = document.getElementById('logoutBtn');
-
-const searchInput = document.getElementById('searchInput');
+const loginMsg = document.getElementById('loginMsg');
+const userRole = document.getElementById('userRole');
 
 const uploadSection = document.getElementById('uploadSection');
 const subjectSelect = document.getElementById('subjectSelect');
@@ -37,7 +34,6 @@ const pdfTitle = document.getElementById('pdfTitle');
 const closePdf = document.getElementById('closePdf');
 
 const themeToggle = document.getElementById('themeToggle');
-const userRole = document.getElementById('userRole');
 
 /* =====================
    HELPERS
@@ -51,89 +47,72 @@ function setMsg(text, isError = false){
 function saveUser(obj){ localStorage.setItem('eanotes_user', JSON.stringify(obj)); }
 function getUser(){ try { return JSON.parse(localStorage.getItem('eanotes_user')); } catch { return null; } }
 
-/* Prevent credential/password manager popups as much as possible:
-   - inputs are not inside a <form>
-   - login button is type="button"
-   - password has autocomplete="new-password"
-*/
-roleSelect.addEventListener('change', () => {
-  if (roleSelect.value === 'teacher') {
-    labelUser.textContent = 'Teacher Email';
-    usernameEl.placeholder = 'teacher@example.com';
-  } else {
-    labelUser.textContent = 'Student name';
-    usernameEl.placeholder = 'Student name';
-  }
-});
-
-/* Theme */
+/* THEME */
 themeToggle.onclick = () => {
   document.body.classList.toggle('light');
   themeToggle.textContent = document.body.classList.contains('light') ? '☀️' : '🌙';
 };
 
-/* Quick button fills student creds */
-quickBtn.onclick = () => {
-  roleSelect.value = 'student';
-  roleSelect.dispatchEvent(new Event('change'));
+/* Prevent credential manager popup: button type=button and inputs not inside form */
+/* Enter key triggers login */
+[usernameEl, passwordEl].forEach(inp => inp.addEventListener('keyup', (e) => { if (e.key === 'Enter') loginHandler(); }));
+
+/* QUICK fill */
+quickBtn.addEventListener('click', () => {
   usernameEl.value = usernameEl.value || 'Student';
   passwordEl.value = '@armyamanu';
-  setMsg('Quick student ready — click Login');
-};
+  setMsg('Quick student ready — press Login');
+});
 
-/* LOGIN logic */
-loginBtn.addEventListener('click', async () => {
+/* LOGIN HANDLER (password decides) */
+async function loginHandler(){
   setMsg('');
   showLoading();
 
-  const role = roleSelect.value;
   const id = usernameEl.value.trim();
   const pw = passwordEl.value;
 
   if (!id || !pw) {
-    setMsg('Fill username and password', true);
+    setMsg('Fill both fields', true);
     hideLoading();
     return;
   }
 
-  try {
-    if (role === 'student') {
-      // simple local student login with common password
-      if (pw !== '@armyamanu') {
-        setMsg('Incorrect student password', true);
-        hideLoading();
-        return;
-      }
-      saveUser({ role:'student', name: id });
-      userRole.textContent = `student: ${id}`;
-      uploadSection.style.display = 'none';
-      logoutBtn.style.display = 'inline-block';
-      setMsg('Logged in as student');
-      hideLoading();
-      await loadFiles();
-      return;
-    }
+  // student: common password
+  if (pw === '@armyamanu') {
+    saveUser({ role: 'student', name: id });
+    userRole.textContent = `student: ${id}`;
+    uploadSection.style.display = 'none';
+    logoutBtn.style.display = 'inline-block';
+    setMsg('Logged in as student');
+    hideLoading();
+    await loadFiles(); // show files
+    return;
+  }
 
-    // teacher: use Supabase email/password
-    const res = await sb.auth.signInWithPassword({ email: id, password: pw });
-    if (res.error) throw res.error;
-
-    saveUser({ role:'teacher', email: id });
+  // teacher: common teacher password (client-side)
+  if (pw === '@teacher123') {
+    // NOTE: this is client-side login (insecure) per your instruction
+    saveUser({ role: 'teacher', email: id });
     userRole.textContent = `teacher: ${id}`;
     uploadSection.style.display = 'block';
     logoutBtn.style.display = 'inline-block';
     setMsg('Logged in as teacher');
     hideLoading();
     await loadFiles();
-  } catch (err) {
-    setMsg(err.message || 'Login failed', true);
-    hideLoading();
+    return;
   }
-});
+
+  // invalid
+  setMsg('Incorrect password', true);
+  hideLoading();
+}
+
+/* attach loginBtn */
+loginBtn.addEventListener('click', loginHandler);
 
 /* LOGOUT */
 logoutBtn.addEventListener('click', async () => {
-  try { await sb.auth.signOut(); } catch {}
   localStorage.removeItem('eanotes_user');
   uploadSection.style.display = 'none';
   logoutBtn.style.display = 'none';
@@ -142,7 +121,7 @@ logoutBtn.addEventListener('click', async () => {
   fileList.innerHTML = '';
 });
 
-/* UPLOAD */
+/* UPLOAD (teacher only) */
 uploadBtn.addEventListener('click', async () => {
   const file = fileInput.files[0];
   if (!file) return alert('Choose a PDF first');
@@ -158,7 +137,6 @@ uploadBtn.addEventListener('click', async () => {
   const path = `${subject}/${Date.now()}_${safe}`;
 
   try {
-    // upload (no fine-grained progress available in this SDK)
     const { error: upErr } = await sb.storage.from('files').upload(path, file, { upsert: true });
     if (upErr) throw upErr;
 
@@ -187,24 +165,16 @@ uploadBtn.addEventListener('click', async () => {
   }
 });
 
-/* SEARCH inside login area — used to filter file list */
-searchInput.addEventListener('input', () => {
-  // small debounce
-  if (window._searchTimer) clearTimeout(window._searchTimer);
-  window._searchTimer = setTimeout(() => loadFiles(), 250);
-});
-
-/* LOAD FILES from DB */
+/* LOAD FILES */
 async function loadFiles(){
-  const subj = subjectSelect.value;
-  const q = (searchInput.value || '').trim();
+  const q = ''; // no search input on login per your instruction
+  const subject = subjectSelect.value;
 
   fileList.innerHTML = 'Loading...';
   showLoading();
 
   try {
-    let query = sb.from('files').select('*').eq('subject', subj).order('created_at', { ascending: false });
-    if (q) query = query.ilike('name', `%${q}%`);
+    let query = sb.from('files').select('*').eq('subject', subject).order('created_at', { ascending: false });
 
     const { data, error } = await query;
     if (error) throw error;
@@ -226,13 +196,12 @@ async function loadFiles(){
           <div style="font-weight:700">${escapeHtml(item.name)}</div>
           <div class="muted" style="font-size:12px">${escapeHtml(item.subject)} • ${new Date(item.created_at).toLocaleString()}</div>
         </div>
-        <div class="row" style="gap:8px">
+        <div style="display:flex;gap:8px">
           <button class="btn-ghost" type="button">View</button>
-          ${user && user.role === 'teacher' ? `<button class="btn-danger" type="button">Delete</button>` : ''}
+          ${user && user.role === 'teacher' ? '<button class="btn-danger" type="button">Delete</button>' : ''}
         </div>
       `;
 
-      // view button
       const viewBtn = div.querySelector('.btn-ghost');
       viewBtn.onclick = () => {
         pdfTitle.textContent = item.name;
@@ -240,7 +209,6 @@ async function loadFiles(){
         pdfOverlay.style.display = 'flex';
       };
 
-      // delete button (teacher only)
       if (user && user.role === 'teacher') {
         const delBtn = div.querySelector('.btn-danger');
         delBtn.onclick = async () => {
@@ -270,7 +238,7 @@ async function loadFiles(){
 /* PDF close */
 closePdf.addEventListener('click', () => { pdfOverlay.style.display = 'none'; pdfFrame.src = ''; });
 
-/* initial state */
+/* INIT */
 (function init(){
   const u = getUser();
   if (u) {
@@ -283,5 +251,5 @@ closePdf.addEventListener('click', () => { pdfOverlay.style.display = 'none'; pd
   }
 })();
 
-/* utils */
-function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+/* util */
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
