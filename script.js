@@ -1,83 +1,77 @@
-/***************************************************
-  CLEAN WORKING FINAL JS
-  - Teacher login (email + password)
-  - Student login (name only)
-  - No duplicates
-  - No conflicts
-  - Works 100%
-***************************************************/
+/************************************************************
+ FULLY WORKING CLEAN SCRIPT.JS
+ ************************************************************/
 
-console.log("Script loaded ✔");
+console.log("script.js is running ✔");
 
-// Firebase init
+// -------------------- FIREBASE INIT -----------------------
 const firebaseConfig = {
-  apiKey:"AIzaSyAnUvU6tCpnO9oD4wdXbLS1o7jWpQuNPzE",
-  authDomain:"army-6b712.firebaseapp.com",
-  projectId:"army-6b712",
-  storageBucket:"army-6b712.appspot.com",
-  messagingSenderId:"468802966776",
-  appId:"1:468802966776:web:57cc6f23da92b6f3f7d70d"
+  apiKey: "AIzaSyAnUvU6tCpnO9oD4wdXbLS1o7jWpQuNPzE",
+  authDomain: "army-6b712.firebaseapp.com",
+  projectId: "army-6b712",
+  storageBucket: "army-6b712.appspot.com",
+  messagingSenderId: "468802966776",
+  appId: "1:468802966776:web:57cc6f23da92b6f3f7d70d"
 };
-firebase.initializeApp(firebaseConfig);
 
+firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
 
-// DOM
-const username = document.getElementById("username");
-const password = document.getElementById("password");
-const btnLogin = document.getElementById("btnLogin");
-const btnLogout = document.getElementById("btnLogout");
+// -------------------- DOM ELEMENTS ------------------------
 const loginArea = document.getElementById("loginArea");
 const mainArea = document.getElementById("mainArea");
+const usernameInput = document.getElementById("username");
+const passwordInput = document.getElementById("password");
+const btnLogin = document.getElementById("btnLogin");
+const btnLogout = document.getElementById("btnLogout");
 const userRole = document.getElementById("userRole");
+
 const uploadBtn = document.getElementById("uploadBtn");
 const fileUpload = document.getElementById("fileUpload");
+
 const folderSelect = document.getElementById("folderSelect");
 const fileList = document.getElementById("fileList");
 const searchInput = document.getElementById("searchInput");
 const btnRefresh = document.getElementById("btnRefresh");
-const themeToggle = document.getElementById("themeToggle");
+
 const pdfOverlay = document.getElementById("pdfOverlay");
 const pdfFrame = document.getElementById("pdfFrame");
 const pdfName = document.getElementById("pdfName");
 const closePdf = document.getElementById("closePdf");
 
-let role = "guest";
-let files = [];
+let currentRole = "guest";
+let filesCache = [];
 
-/*********** DARK MODE ************/
-themeToggle.onclick = () => {
-  document.body.classList.toggle("dark");
-};
-
-/*********** LOGIN ************/
+// -------------------- LOGIN LOGIC --------------------------
 btnLogin.onclick = async () => {
-  const input = username.value.trim();
-  const pass = password.value;
+  const userValue = usernameInput.value.trim();
+  const passValue = passwordInput.value;
 
-  if (!input) return alert("Enter name (student) or email (teacher)");
+  if (!userValue) return alert("Enter student name or teacher email.");
 
   try {
-    if (input.includes("@")) {
-      // Teacher
-      const cred = await auth.signInWithEmailAndPassword(input, pass);
-      await db.collection("users").doc(cred.user.uid).set({ role:"teacher" }, { merge:true });
-      role = "teacher";
+    let user;
+
+    if (userValue.includes("@")) {
+      // TEACHER LOGIN
+      user = await auth.signInWithEmailAndPassword(userValue, passValue);
+      await db.collection("users").doc(user.user.uid).set({ role: "teacher" }, { merge: true });
+      currentRole = "teacher";
+
     } else {
-      // Student
-      const cred = await auth.signInAnonymously();
-      await db.collection("users").doc(cred.user.uid).set({ name: input, role:"student" }, { merge:true });
-      role = "student";
+      // STUDENT LOGIN
+      user = await auth.signInAnonymously();
+      await db.collection("users").doc(user.user.uid).set({ name: userValue, role: "student" }, { merge: true });
+      currentRole = "student";
     }
 
-    userRole.textContent = role;
-    uploadBtn.style.display = role === "teacher" ? "inline-block" : "none";
-
+    userRole.textContent = currentRole;
     loginArea.style.display = "none";
     mainArea.style.display = "block";
 
+    uploadBtn.style.display = currentRole === "teacher" ? "inline-block" : "none";
     loadFiles();
 
   } catch (err) {
@@ -86,7 +80,7 @@ btnLogin.onclick = async () => {
   }
 };
 
-/*********** LOGOUT ************/
+// -------------------- LOGOUT -------------------------------
 btnLogout.onclick = async () => {
   await auth.signOut();
   loginArea.style.display = "block";
@@ -94,28 +88,27 @@ btnLogout.onclick = async () => {
   userRole.textContent = "Not logged in";
 };
 
-/*********** LOAD FILES ************/
+// -------------------- LOAD FILES ----------------------------
 async function loadFiles() {
   const subject = folderSelect.value;
   fileList.innerHTML = "Loading...";
 
   const snap = await db.collection("files")
-    .where("subject","==",subject)
-    .orderBy("time","desc")
+    .where("subject", "==", subject)
+    .orderBy("time", "desc")
     .get();
 
-  files = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  filesCache = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   renderFiles();
 }
 
-/*********** RENDER FILES ************/
+// -------------------- RENDER FILES --------------------------
 function renderFiles() {
   const q = searchInput.value.toLowerCase();
-
-  const filtered = files.filter(f => f.name.toLowerCase().includes(q));
+  const filtered = filesCache.filter(f => f.name.toLowerCase().includes(q));
 
   if (filtered.length === 0) {
-    fileList.innerHTML = "No files.";
+    fileList.innerHTML = "No files found.";
     return;
   }
 
@@ -123,20 +116,20 @@ function renderFiles() {
     <div class="file-row">
       <div>
         <b>${f.name}</b><br>
-        <small>${(f.size/1024).toFixed(1)} KB</small>
+        <small>${(f.size / 1024).toFixed(1)} KB</small>
       </div>
       <div>
-        <button class="btn primary" onclick="previewPDF('${f.url}','${f.name}')">View</button>
-        ${role === "teacher" ? `<button class="btn danger" onclick="deleteFile('${f.id}','${f.url}')">Delete</button>` : ""}
+        <button class="btn primary" onclick="previewPDF('${f.url}','${f.name}')">Preview</button>
+        ${currentRole === "teacher" ? `<button class="btn danger" onclick="deleteFile('${f.id}','${f.url}')">Delete</button>` : ""}
       </div>
     </div>
   `).join("");
 }
 
-/*********** PREVIEW PDF ************/
+// -------------------- PREVIEW PDF ---------------------------
 window.previewPDF = (url, name) => {
-  pdfName.textContent = name;
   pdfFrame.src = url;
+  pdfName.textContent = name;
   pdfOverlay.style.display = "flex";
 };
 
@@ -145,9 +138,9 @@ closePdf.onclick = () => {
   pdfFrame.src = "";
 };
 
-/*********** UPLOAD ************/
+// -------------------- UPLOAD FILE ---------------------------
 fileUpload.onchange = async (e) => {
-  if (role !== "teacher") return alert("Teachers only.");
+  if (currentRole !== "teacher") return alert("Only teachers can upload!");
 
   const file = e.target.files[0];
   if (!file) return;
@@ -160,8 +153,8 @@ fileUpload.onchange = async (e) => {
   const url = await ref.getDownloadURL();
 
   await db.collection("files").add({
-    name: file.name,
     subject,
+    name: file.name,
     size: file.size,
     url,
     time: Date.now()
@@ -170,19 +163,20 @@ fileUpload.onchange = async (e) => {
   loadFiles();
 };
 
-/*********** DELETE ************/
+// -------------------- DELETE FILE ---------------------------
 window.deleteFile = async (id, url) => {
-  if (role !== "teacher") return;
+  if (currentRole !== "teacher") return;
 
   await db.collection("files").doc(id).delete();
-
   const path = decodeURIComponent(url.split("/o/")[1].split("?")[0]);
   await storage.ref().child(path).delete();
 
   loadFiles();
 };
 
-/*********** EVENTS ************/
+// -------------------- EVENTS -------------------------------
 btnRefresh.onclick = loadFiles;
 folderSelect.onchange = loadFiles;
 searchInput.oninput = renderFiles;
+
+console.log("All listeners attached ✔");
