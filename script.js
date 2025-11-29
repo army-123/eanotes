@@ -1,255 +1,215 @@
-/* =====================
-   CONFIG (Supabase)
-   ===================== */
 const SUPABASE_URL = "https://hlstgluwamsuuqlctdzk.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhsc3RnbHV3YW1zdXVxbGN0ZHprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyNzMwMzQsImV4cCI6MjA3OTg0OTAzNH0.KUPx3pzrcd3H5aEx2B7mFosWNUVOEzXDD5gL-TmyawQ";
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-/* =====================
-   ELEMENTS
-   ===================== */
-const usernameEl = document.getElementById('username');
-const passwordEl = document.getElementById('password');
-const loginBtn = document.getElementById('loginBtn');
-const quickBtn = document.getElementById('quickBtn');
-const logoutBtn = document.getElementById('logoutBtn');
-const loginMsg = document.getElementById('loginMsg');
-const userRole = document.getElementById('userRole');
+const usernameEl = document.getElementById("username");
+const passwordEl = document.getElementById("password");
+const loginBtn = document.getElementById("loginBtn");
+const quickBtn = document.getElementById("quickBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const loginMsg = document.getElementById("loginMsg");
 
-const uploadSection = document.getElementById('uploadSection');
-const subjectSelect = document.getElementById('subjectSelect');
-const fileInput = document.getElementById('fileInput');
-const uploadBtn = document.getElementById('uploadBtn');
-const uploadInfo = document.getElementById('uploadInfo');
-const uploadPercent = document.getElementById('uploadPercent');
+const uploadSection = document.getElementById("uploadSection");
+const filesSection = document.getElementById("filesSection");
 
-const fileList = document.getElementById('fileList');
+const subjectSelect = document.getElementById("subjectSelect");
+const fileInput = document.getElementById("fileInput");
+const uploadBtn = document.getElementById("uploadBtn");
+const uploadInfo = document.getElementById("uploadInfo");
+const uploadPercent = document.getElementById("uploadPercent");
 
-const loadingOverlay = document.getElementById('loadingOverlay');
+const fileList = document.getElementById("fileList");
 
-const pdfOverlay = document.getElementById('pdfOverlay');
-const pdfFrame = document.getElementById('pdfFrame');
-const pdfTitle = document.getElementById('pdfTitle');
-const closePdf = document.getElementById('closePdf');
+const pdfOverlay = document.getElementById("pdfOverlay");
+const pdfFrame = document.getElementById("pdfFrame");
+const pdfTitle = document.getElementById("pdfTitle");
+const closePdf = document.getElementById("closePdf");
 
-const themeToggle = document.getElementById('themeToggle');
+const themeToggle = document.getElementById("themeToggle");
+const loadingOverlay = document.getElementById("loadingOverlay");
 
-/* =====================
-   HELPERS
-   ===================== */
-function showLoading(){ loadingOverlay.style.display = 'flex'; }
-function hideLoading(){ loadingOverlay.style.display = 'none'; }
-function setMsg(text, isError = false){
-  loginMsg.textContent = text || '';
-  loginMsg.style.color = isError ? '#ff7b7b' : 'var(--muted)';
-}
-function saveUser(obj){ localStorage.setItem('eanotes_user', JSON.stringify(obj)); }
-function getUser(){ try { return JSON.parse(localStorage.getItem('eanotes_user')); } catch { return null; } }
+function showLoading(){ loadingOverlay.style.display="flex"; }
+function hideLoading(){ loadingOverlay.style.display="none"; }
+function setMsg(t,e=false){ loginMsg.textContent=t; loginMsg.style.color=e?"#ff7b7b":"var(--muted)"; }
+
+function saveUser(u){ localStorage.setItem("eanotes_user",JSON.stringify(u)); }
+function getUser(){ return JSON.parse(localStorage.getItem("eanotes_user")||"null"); }
 
 /* THEME */
-themeToggle.onclick = () => {
-  document.body.classList.toggle('light');
-  themeToggle.textContent = document.body.classList.contains('light') ? '☀️' : '🌙';
+themeToggle.onclick=()=>{
+  document.body.classList.toggle("light");
+  themeToggle.textContent=document.body.classList.contains("light")?"☀️":"🌙";
 };
 
-/* Prevent credential manager popup: button type=button and inputs not inside form */
-/* Enter key triggers login */
-[usernameEl, passwordEl].forEach(inp => inp.addEventListener('keyup', (e) => { if (e.key === 'Enter') loginHandler(); }));
+/* QUICK BUTTON */
+quickBtn.onclick=()=>{
+  usernameEl.value=usernameEl.value||"Student";
+  passwordEl.value="@armyamanu";
+  setMsg("Quick student ready");
+};
 
-/* QUICK fill */
-quickBtn.addEventListener('click', () => {
-  usernameEl.value = usernameEl.value || 'Student';
-  passwordEl.value = '@armyamanu';
-  setMsg('Quick student ready — press Login');
-});
-
-/* LOGIN HANDLER (password decides) */
+/* LOGIN HANDLER */
 async function loginHandler(){
-  setMsg('');
-  showLoading();
+  setMsg(""); showLoading();
 
-  const id = usernameEl.value.trim();
-  const pw = passwordEl.value;
+  const user = usernameEl.value.trim();
+  const pass = passwordEl.value;
 
-  if (!id || !pw) {
-    setMsg('Fill both fields', true);
+  if(!user || !pass){ setMsg("Fill both fields", true); hideLoading(); return; }
+
+  // STUDENT
+  if(pass === "@armyamanu"){
+    saveUser({role:"student", name:user});
+    setMsg("Logged in as Student");
+    logoutBtn.style.display="inline-block";
+    uploadSection.style.display="none";
+    filesSection.style.display="block";
     hideLoading();
+    loadFiles();
     return;
   }
 
-  // student: common password
-  if (pw === '@armyamanu') {
-    saveUser({ role: 'student', name: id });
-    userRole.textContent = `student: ${id}`;
-    uploadSection.style.display = 'none';
-    logoutBtn.style.display = 'inline-block';
-    setMsg('Logged in as student');
+  // TEACHER
+  if(pass === "@teacher123"){
+    saveUser({role:"teacher"});
+    setMsg("Logged in as Teacher");
+    logoutBtn.style.display="inline-block";
+    uploadSection.style.display="block";
+    filesSection.style.display="block";
     hideLoading();
-    await loadFiles(); // show files
+    loadFiles();
     return;
   }
 
-  // teacher: common teacher password (client-side)
-  if (pw === '@teacher123') {
-    // NOTE: this is client-side login (insecure) per your instruction
-    saveUser({ role: 'teacher', email: id });
-    userRole.textContent = `teacher: ${id}`;
-    uploadSection.style.display = 'block';
-    logoutBtn.style.display = 'inline-block';
-    setMsg('Logged in as teacher');
-    hideLoading();
-    await loadFiles();
-    return;
-  }
-
-  // invalid
-  setMsg('Incorrect password', true);
+  setMsg("Incorrect password", true);
   hideLoading();
 }
 
-/* attach loginBtn */
-loginBtn.addEventListener('click', loginHandler);
+/* LOGIN CLICK */
+loginBtn.onclick = loginHandler;
+
+/* ENTER KEY */
+passwordEl.addEventListener("keyup",e=>{ if(e.key==="Enter") loginHandler(); });
 
 /* LOGOUT */
-logoutBtn.addEventListener('click', async () => {
-  localStorage.removeItem('eanotes_user');
-  uploadSection.style.display = 'none';
-  logoutBtn.style.display = 'none';
-  userRole.textContent = 'Not logged in';
-  setMsg('Logged out');
-  fileList.innerHTML = '';
-});
+logoutBtn.onclick=()=>{
+  localStorage.removeItem("eanotes_user");
+  usernameEl.value="";
+  passwordEl.value="";
+  uploadSection.style.display="none";
+  filesSection.style.display="none";
+  logoutBtn.style.display="none";
+  setMsg("Logged out");
+};
 
-/* UPLOAD (teacher only) */
-uploadBtn.addEventListener('click', async () => {
-  const file = fileInput.files[0];
-  if (!file) return alert('Choose a PDF first');
-  const user = getUser();
-  if (!user || user.role !== 'teacher') return alert('Only teachers can upload');
+/* UPLOAD */
+uploadBtn.onclick=async()=>{
+  const file=fileInput.files[0];
+  if(!file) return alert("Choose a PDF");
 
-  uploadInfo.style.display = 'block';
-  uploadPercent.textContent = '0%';
+  const user=getUser();
+  if(!user || user.role!=="teacher") return alert("Teacher only");
+
+  uploadInfo.style.display="block";
+  uploadPercent.textContent="0%";
   showLoading();
 
   const subject = subjectSelect.value;
-  const safe = encodeURIComponent(file.name.replace(/\s+/g,'_'));
+  const safe = encodeURIComponent(file.name.replace(/\s+/g,"_"));
   const path = `${subject}/${Date.now()}_${safe}`;
 
-  try {
-    const { error: upErr } = await sb.storage.from('files').upload(path, file, { upsert: true });
-    if (upErr) throw upErr;
+  try{
+    const {error} = await sb.storage.from("files").upload(path,file,{upsert:true});
+    if(error) throw error;
 
-    uploadPercent.textContent = '100%';
+    uploadPercent.textContent="100%";
 
-    const { data: urlData } = sb.storage.from('files').getPublicUrl(path);
-    const publicUrl = urlData?.publicUrl || '';
+    const {data:urlData}=sb.storage.from("files").getPublicUrl(path);
+    const url=urlData.publicUrl;
 
-    const { error: insErr } = await sb.from('files').insert([{
-      name: file.name,
-      subject,
-      url: publicUrl,
-      path,
-      created_at: new Date().toISOString()
-    }]);
-    if (insErr) throw insErr;
+    await sb.from("files").insert([{name:file.name,subject,url,path,created_at:new Date().toISOString()}]);
 
-    setMsg('Upload successful');
-    fileInput.value = '';
-    await loadFiles();
-  } catch (e) {
-    alert('Upload failed: ' + (e.message || e));
-  } finally {
-    uploadInfo.style.display = 'none';
+    fileInput.value="";
     hideLoading();
+    uploadInfo.style.display="none";
+    loadFiles();
+  }catch(e){
+    alert("Upload failed");
+    hideLoading();
+    uploadInfo.style.display="none";
   }
-});
+};
 
 /* LOAD FILES */
 async function loadFiles(){
-  const q = ''; // no search input on login per your instruction
-  const subject = subjectSelect.value;
-
-  fileList.innerHTML = 'Loading...';
+  fileList.innerHTML = "Loading...";
   showLoading();
 
-  try {
-    let query = sb.from('files').select('*').eq('subject', subject).order('created_at', { ascending: false });
+  const subject = subjectSelect.value;
 
-    const { data, error } = await query;
-    if (error) throw error;
+  try{
+    const {data,error} = await sb.from("files").select("*").eq("subject",subject).order("created_at",{ascending:false});
+    if(error) throw error;
 
-    if (!data || data.length === 0) {
-      fileList.innerHTML = '<div class="muted">No files found.</div>';
-      hideLoading();
-      return;
-    }
+    if(!data.length){ fileList.innerHTML="<div class='muted'>No files</div>"; hideLoading(); return; }
 
-    fileList.innerHTML = '';
-    const user = getUser();
+    fileList.innerHTML="";
+    const user=getUser();
 
-    data.forEach(item => {
-      const div = document.createElement('div');
-      div.className = 'fileRow';
-      div.innerHTML = `
-        <div style="min-width:0">
-          <div style="font-weight:700">${escapeHtml(item.name)}</div>
-          <div class="muted" style="font-size:12px">${escapeHtml(item.subject)} • ${new Date(item.created_at).toLocaleString()}</div>
+    data.forEach(item=>{
+      const div=document.createElement("div");
+      div.className="fileRow";
+
+      div.innerHTML=`
+        <div>
+          <div style="font-weight:700">${item.name}</div>
+          <div class="muted" style="font-size:12px">${item.subject}</div>
         </div>
-        <div style="display:flex;gap:8px">
-          <button class="btn-ghost" type="button">View</button>
-          ${user && user.role === 'teacher' ? '<button class="btn-danger" type="button">Delete</button>' : ''}
+        <div style="display:flex;gap:8px;">
+          <button class="btn-ghost">View</button>
+          ${user && user.role==="teacher" ? `<button class="btn-danger">Delete</button>` : ""}
         </div>
       `;
 
-      const viewBtn = div.querySelector('.btn-ghost');
-      viewBtn.onclick = () => {
-        pdfTitle.textContent = item.name;
-        pdfFrame.src = item.url;
-        pdfOverlay.style.display = 'flex';
+      div.querySelector(".btn-ghost").onclick=()=>{
+        pdfTitle.textContent=item.name;
+        pdfFrame.src=item.url;
+        pdfOverlay.style.display="flex";
       };
 
-      if (user && user.role === 'teacher') {
-        const delBtn = div.querySelector('.btn-danger');
-        delBtn.onclick = async () => {
-          if (!confirm('Delete this file?')) return;
-          try {
-            const { error: delErr } = await sb.from('files').delete().eq('id', item.id);
-            if (delErr) throw delErr;
-            if (item.path) await sb.storage.from('files').remove([item.path]);
-            await loadFiles();
-          } catch (e) {
-            alert('Delete failed: ' + (e.message || e));
-          }
+      if(user && user.role==="teacher"){
+        div.querySelector(".btn-danger").onclick=async()=>{
+          if(!confirm("Delete?")) return;
+
+          await sb.from("files").delete().eq("id",item.id);
+          await sb.storage.from("files").remove([item.path]);
+
+          loadFiles();
         };
       }
 
       fileList.appendChild(div);
     });
 
-  } catch (err) {
-    fileList.innerHTML = '<div class="muted">Error loading files</div>';
-    console.error(err);
-  } finally {
+  }catch(e){
+    fileList.innerHTML="Error loading files";
+  }finally{
     hideLoading();
   }
 }
 
-/* PDF close */
-closePdf.addEventListener('click', () => { pdfOverlay.style.display = 'none'; pdfFrame.src = ''; });
+closePdf.onclick=()=>{ pdfOverlay.style.display="none"; pdfFrame.src=""; };
 
-/* INIT */
-(function init(){
-  const u = getUser();
-  if (u) {
-    userRole.textContent = u.role === 'teacher' ? `teacher: ${u.email||u.name}` : `student: ${u.name}`;
-    logoutBtn.style.display = 'inline-block';
-    uploadSection.style.display = (u.role === 'teacher') ? 'block' : 'none';
-    loadFiles();
-  } else {
-    uploadSection.style.display = 'none';
-  }
+/* AUTO-LOGIN */
+(function(){
+  const user=getUser();
+  if(!user) return;
+
+  logoutBtn.style.display="inline-block";
+  filesSection.style.display="block";
+
+  if(user.role==="teacher") uploadSection.style.display="block";
+
+  loadFiles();
 })();
-
-/* util */
-function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }

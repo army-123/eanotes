@@ -9,7 +9,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
 <style>
-:root{ --bg:#0f1724; --card:#0b1220; --text:#e6eefc; --muted:#9aa8c7; --accent:#3b82f6; --danger:#dc2626; --teacher:#22c55e; --student:#3b82f6; }
+:root{ --bg:#0f1724; --card:#0b1220; --text:#e6eefc; --muted:#9aa8c7; --accent:#3b82f6; --danger:#dc2626; }
 body.light{ --bg:#f6f8ff; --card:#fff; --text:#0b1220; --muted:#6b7280; --accent:#2563eb; }
 *{box-sizing:border-box}
 body{ margin:0; background:var(--bg); color:var(--text); font-family:Inter,system-ui,Arial; padding:20px; min-height:100vh; display:flex; align-items:center; justify-content:center; }
@@ -35,7 +35,6 @@ button{ padding:10px 12px; border-radius:8px; border:0; cursor:pointer; font-wei
 .pdf-box{ width:92%; height:92%; background:white; border-radius:10px; display:flex; flex-direction:column; overflow:hidden; }
 .pdf-frame{ flex:1; border:0; }
 
-@media(max-width:880px){ .container{ padding:12px; } }
 </style>
 </head>
 <body>
@@ -43,64 +42,68 @@ button{ padding:10px 12px; border-radius:8px; border:0; cursor:pointer; font-wei
 <div id="loadingOverlay"><div class="spinner"></div></div>
 
 <div class="container">
+
+  <!-- HEADER -->
   <div class="header">
     <div>
       <h1>EA Notes Cloud</h1>
-      <div class="muted">Simple login — password decides role</div>
+      <div class="muted">Simple Login — Password Decides Role</div>
     </div>
-    <div style="display:flex;gap:10px;align-items:center">
-      <button id="themeToggle" class="btn-ghost">🌙</button>
-      <div id="userRole" class="muted">Not logged in</div>
-    </div>
+
+    <!-- Remove email — only show Teacher / Student -->
+    <button id="themeToggle" class="btn-ghost">🌙</button>
   </div>
 
-  <!-- LOGIN: only two inputs (name/email + password) -->
+  <!-- LOGIN AREA -->
   <div class="section" id="loginSection">
     <label>Username / Email</label>
-    <input id="username" name="eanotes_username" autocomplete="off" placeholder="Student name or teacher email">
+    <input id="username" placeholder="Student name or teacher email" autocomplete="off">
 
     <label>Password</label>
-    <input id="password" name="eanotes_password" type="password" autocomplete="new-password" placeholder="Enter password">
+    <input id="password" type="password" placeholder="Enter password" autocomplete="new-password">
 
     <div style="display:flex;gap:8px;margin-top:12px;">
       <button id="loginBtn" type="button" class="btn-primary" style="flex:1">Login</button>
       <button id="quickBtn" type="button" class="btn-ghost">Quick</button>
     </div>
 
-    <div id="loginMsg" class="muted" style="margin-top:10px; min-height:18px;"></div>
+    <div id="loginMsg" class="muted" style="margin-top:10px"></div>
 
+    <!-- LOGOUT INSIDE LOGIN SECTION -->
     <button id="logoutBtn" class="btn-danger" style="margin-top:12px; display:none;">Logout</button>
   </div>
 
-  <!-- UPLOAD (teacher only) -->
+  <!-- THESE SECTIONS ARE HIDDEN UNTIL LOGIN -->
   <div class="section" id="uploadSection" style="display:none;">
     <label>Subject</label>
     <select id="subjectSelect">
       <option>Anatomy</option><option>History</option><option>Geography</option><option>Psychology</option><option>Mathematics</option>
     </select>
 
-    <div style="display:flex;gap:8px;margin-top:10px;align-items:center;">
-      <label for="fileInput" id="chooseLabel" class="btn-ghost" style="cursor:pointer;">Choose PDF</label>
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <label for="fileInput" class="btn-ghost" style="cursor:pointer;">Choose PDF</label>
       <input id="fileInput" type="file" accept="application/pdf" style="display:none;">
       <button id="uploadBtn" class="btn-primary">Upload</button>
     </div>
 
-    <div id="uploadInfo" class="muted" style="margin-top:10px; display:none;">Uploading... <span id="uploadPercent">0%</span></div>
+    <div id="uploadInfo" class="muted" style="margin-top:10px; display:none;">
+      Uploading... <span id="uploadPercent">0%</span>
+    </div>
   </div>
 
-  <!-- FILE LIST -->
-  <div class="section" id="filesSection">
-    <h3 style="margin:0 0 8px 0">Files</h3>
+  <div class="section" id="filesSection" style="display:none;">
+    <h3 style="margin:0;">Files</h3>
     <div id="fileList"></div>
   </div>
+
 </div>
 
-<!-- PDF viewer -->
+<!-- PDF VIEWER -->
 <div class="pdf-overlay" id="pdfOverlay">
   <div class="pdf-box">
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #eee;">
+    <div style="display:flex;justify-content:space-between;padding:10px;border-bottom:1px solid #eee;">
       <div id="pdfTitle"></div>
-      <div><button id="closePdf" class="btn-primary">Close</button></div>
+      <button id="closePdf" class="btn-primary">Close</button>
     </div>
     <iframe id="pdfFrame" class="pdf-frame"></iframe>
   </div>
