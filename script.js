@@ -3,7 +3,7 @@ const supabaseUrl = "https://hlstgluwamsuuqlctdzk.supabase.co";
 const supabaseKey =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhsc3RnbHV3YW1zdXVxbGN0ZHprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyNzMwMzQsImV4cCI6MjA3OTg0OTAzNH0.KUPx3pzrcd3H5aEx2B7mFosWNUVOEzXDD5gL-TmyawQ";
 
-const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
 
 // --------------------------------------------------------------
 //                           LOGIN
@@ -21,7 +21,7 @@ async function login() {
 
   const email = `${name}@eanotes.com`;
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { error } = await supabaseClient.auth.signInWithPassword({
     email,
     password,
   });
@@ -42,7 +42,7 @@ document.getElementById("btnLogin").addEventListener("click", login);
 // --------------------------------------------------------------
 
 async function logout() {
-  await supabase.auth.signOut();
+  await supabaseClient.auth.signOut();
 
   document.getElementById("loginBox").classList.remove("hidden");
   document.getElementById("dashboard").classList.add("hidden");
@@ -57,7 +57,7 @@ document.getElementById("logoutBtn").addEventListener("click", logout);
 async function checkUser() {
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await supabaseClient.auth.getUser();
 
   if (!user) {
     document.getElementById("loginBox").classList.remove("hidden");
@@ -69,7 +69,7 @@ async function checkUser() {
   document.getElementById("dashboard").classList.remove("hidden");
 
   const name = user.email.split("@")[0];
-  const role = user.user_metadata.role || "student";
+  const role = user.user_metadata?.role || "student";
 
   document.getElementById("welcomeText").innerText = `Welcome, ${name}`;
   document.getElementById("roleTag").innerText = role;
@@ -104,8 +104,7 @@ async function upload() {
   const fileName = `${Date.now()}_${file.name}`;
   const filePath = `${subject}/${fileName}`;
 
-  // Upload file normally (no chunking)
-  const { error: uploadError } = await supabase.storage
+  const { error: uploadError } = await supabaseClient.storage
     .from("files")
     .upload(filePath, file, { upsert: false });
 
@@ -114,15 +113,13 @@ async function upload() {
     return;
   }
 
-  // Get public URL
-  const { data: urlData } = supabase.storage
+  const { data: urlData } = supabaseClient.storage
     .from("files")
     .getPublicUrl(filePath);
 
   const publicUrl = urlData.publicUrl;
 
-  // Save file info to database
-  const { error: dbError } = await supabase.from("files").insert({
+  const { error: dbError } = await supabaseClient.from("files").insert({
     name: file.name,
     subject,
     url: publicUrl,
@@ -147,7 +144,7 @@ async function upload() {
 async function loadFiles() {
   const subject = document.getElementById("subjectSelect").value;
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from("files")
     .select("*")
     .eq("subject", subject)
@@ -187,8 +184,8 @@ function displayFile(file) {
 async function deleteFile(path) {
   if (!confirm("Delete this file?")) return;
 
-  await supabase.storage.from("files").remove([path]);
-  await supabase.from("files").delete().eq("path", path);
+  await supabaseClient.storage.from("files").remove([path]);
+  await supabaseClient.from("files").delete().eq("path", path);
 
   loadFiles();
 }
