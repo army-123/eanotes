@@ -4,12 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EA Notes Cloud</title>
+
 <link rel="stylesheet" href="styles.css">
 
+<!-- Supabase client -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body>
+
+<!-- ---------------------- LOGIN PAGE ----------------------- -->
 
 <div id="loginBox" class="card">
     <h2>EA Notes Cloud</h2>
@@ -19,13 +23,18 @@
     <input id="loginPassword" type="password" placeholder="Password">
 
     <button id="btnLogin">Login</button>
+
     <p id="loginFeedback" class="feedback"></p>
 </div>
 
+<!-- ---------------------- DASHBOARD ------------------------ -->
+
 <div id="dashboard" class="card hidden">
+
     <h2 id="welcomeText"></h2>
     <p class="role">Role: <span id="roleTag"></span></p>
 
+    <!-- Subject selector -->
     <select id="subjectSelect">
         <option value="Anatomy">Anatomy</option>
         <option value="History">History</option>
@@ -33,14 +42,19 @@
         <option value="Physics">Physics</option>
     </select>
 
+    <!-- Upload button (teacher only) -->
     <button id="uploadBtn">Upload PDF</button>
     <input id="realFileInput" type="file" accept="application/pdf" hidden>
 
+    <!-- File list -->
     <div id="fileList" class="file-list"></div>
 
+    <!-- Logout -->
     <button id="logoutBtn" class="logout">Logout</button>
 </div>
 
+<!-- Your JS -->
 <script src="script.js"></script>
+
 </body>
 </html>
