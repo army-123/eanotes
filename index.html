@@ -233,21 +233,28 @@ const TEACHER_PASS = "@teacher123";
 const STUDENT_PASS = "@armyamanu";
 
 btnLogin.onclick = async () => {
-  const pass = password.value.trim();
-  const name = username.value.trim();
+  const pass = document.getElementById("password").value.trim();
+  const name = document.getElementById("username").value.trim();
 
-  if(pass===TEACHER_PASS) currentRole="teacher";
-  else if(pass===STUDENT_PASS){if(!name)return alert("Enter name");currentRole="student";} 
-  else return alert("Incorrect password");
+  if(pass === TEACHER_PASS) currentRole = "teacher";
+  else if(pass === STUDENT_PASS){
+    if(!name) return alert("Enter your name");
+    currentRole = "student";
+  } else return alert("Incorrect password");
 
   userRole.textContent = currentRole;
-  loginArea.style.display="none";
-  mainArea.style.display="grid";
-  uploadRow.style.display = currentRole==="teacher" ? "flex" : "none";
+  loginArea.style.display = "none";
+  mainArea.style.display = "grid";
+  uploadRow.style.display = currentRole === "teacher" ? "flex" : "none";
 
-  const res = await auth.signInAnonymously();
-  await db.collection("users").doc(res.user.uid).set({name,role:currentRole},{merge:true});
-  loadFiles();
+  try{
+    const res = await firebase.auth().signInAnonymously();
+    await db.collection("users").doc(res.user.uid).set({ name, role: currentRole }, { merge:true });
+    loadFiles();
+  } catch(err){
+    alert("Login error: " + err.message);
+  }
+}();
 };
 
 /***************************************************
