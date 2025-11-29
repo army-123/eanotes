@@ -48,6 +48,8 @@ const STUDENT_PASS = "@armyamanu";
 
 btnLogin.addEventListener("click", async () => {
   console.log("LOGIN CLICKED");
+<button id="btnLogin" class="btn primary">Login</button>;
+
 
   const pass = passwordInput.value.trim();
   const name = usernameInput.value.trim();
