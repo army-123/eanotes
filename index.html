@@ -138,15 +138,42 @@
     const user = document.getElementById("username").value;
     const pass = document.getElementById("password").value;
 
-    if (user.trim() !== "" && pass === "@armyamanu") {
+    if (pass === "@teacher123") {
+      localStorage.setItem("role", "teacher");
+      localStorage.setItem("loggedIn", "true");
+      showApp();
+    } else if (pass === "@armyamanu" && user.trim() !== "") {
+      localStorage.setItem("role", "student");
       localStorage.setItem("loggedIn", "true");
       showApp();
     } else {
-      alert("Incorrect username or password");
+      alert("Incorrect name or password");
     }
   }
 
   function logout() {
+    localStorage.removeItem("loggedIn");
+    localStorage.removeItem("role");
+    location.reload();
+  }
+
+  function showApp() {
+    document.getElementById("loginPage").style.display = "none";
+    document.getElementById("appPage").style.display = "block";
+
+    const role = localStorage.getItem("role");
+    const upload = document.getElementById("fileUpload");
+
+    if (role === "student") {
+      upload.style.display = "none";
+    } else {
+      upload.style.display = "block";
+    }
+
+    loadFiles();
+  }
+
+  function logout()() {
     localStorage.removeItem("loggedIn");
     location.reload();
   }
@@ -195,7 +222,7 @@
         <div class='file-item'>
           <b>${f.name}</b><br>
           <small>${(f.size / 1024).toFixed(2)} KB</small><br><br>
-          <a href='${f.content}' download='${f.name}'><button>Download</button></a>
+          <button disabled style='opacity:0.5; cursor:not-allowed;'>View Only</button>
           <button class='delete-btn' onclick='deleteFile(${i})'>X</button>
         </div>
       `;
