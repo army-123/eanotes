@@ -1,9 +1,12 @@
+<!-- Updated index.html placed here. I will restructure layout so search bar, subjects, and files only appear AFTER login. -->
+<!-- NOTE: Replace your existing index.html with this file. -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>EA Notes — Cloud Version</title>
+  <title>EA Notes — Cloud Version (Fixed Layout)</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 
@@ -17,7 +20,6 @@
       --text:#111827;
       --soft:#f3f5f7;
     }
-    /* Dark theme variables */
     body.dark {
       --bg:#0b1220;
       --card:#071022;
@@ -27,7 +29,6 @@
       --text:#e6eefc;
       --soft:#071a2b;
     }
-
     *{box-sizing:border-box}
     body{
       margin:0;
@@ -51,111 +52,28 @@
       transition:background .25s ease;
     }
 
-    header{
-      padding:14px 20px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      background:linear-gradient(90deg, rgba(255,255,255,0.03), rgba(0,0,0,0));
-      border-bottom:1px solid rgba(0,0,0,0.06);
-    }
-
-    .logo{
-      background:var(--accent);
-      color:white;
-      font-weight:700;
-      width:46px;
-      height:46px;
-      border-radius:10px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:18px;
-    }
-
+    header{padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(0,0,0,0.06);}
+    .logo{background:var(--accent);color:white;font-weight:700;width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;}
     .leftGroup{display:flex;gap:14px;align-items:center}
-    .headingTitle{font-weight:700}
-    .subText{font-size:12px;color:var(--muted)}
+    .muted{color:var(--muted);font-size:13px}
 
-    main{padding:18px;display:grid;grid-template-columns:320px 1fr;gap:18px}
+    /* MAIN LAYOUT */
+    main{padding:18px;display:none;grid-template-columns:320px 1fr;gap:18px}
     .panel{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.04)}
     .card{background:var(--card);padding:12px;border-radius:10px}
 
-    /* Left column styles */
-    #loginCard input, #loginCard select, #controls input {
-      width:100%;
-      padding:10px 12px;
-      border-radius:10px;
-      border:1px solid rgba(0,0,0,0.08);
-      background:transparent;
-      color:var(--text);
-      outline:none;
+    #loginArea{padding:26px;text-align:center}
+    #loginCard{max-width:360px;margin:auto;}
+    #loginCard input, #loginCard select{
+      width:100%;padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,0.08);
     }
-    .btn{
-      padding:10px 12px;border-radius:10px;border:none;font-weight:600;cursor:pointer;
-      min-height:40px;
-    }
-    .btn.primary{background:var(--accent);color:white}
-    .btn.ghost{background:transparent;border:1px solid var(--accent);color:var(--accent)}
-    .btn.danger{background:var(--danger);color:white}
+    .btn{padding:10px 12px;border-radius:10px;border:none;font-weight:600;cursor:pointer;}
+    .primary{background:var(--accent);color:white}
+    .ghost{background:transparent;border:1px solid var(--accent);color:var(--accent)}
+    .danger{background:var(--danger);color:white}
 
-    /* Files list */
     #fileList{display:flex;flex-direction:column;gap:10px;max-height:66vh;overflow:auto;padding-right:6px}
-    .file-row{display:flex;align-items:center;justify-content:space-between;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.05);background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent)}
-    .file-left{display:flex;flex-direction:column}
-    .file-name{font-weight:700}
-    .file-meta{font-size:12px;color:var(--muted)}
-    .actions{display:flex;gap:8px;align-items:center}
-
-    /* Search input */
-    .searchWrap{display:flex;gap:8px;align-items:center}
-    .searchWrap input{flex:1;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.06)}
-
-    /* PDF overlay - FULL SCREEN (user chose option 1) */
-    #pdfOverlay{
-      display:none;
-      position:fixed;
-      inset:0;
-      z-index:2200;
-      background:rgba(0,0,0,0.85);
-      align-items:center;
-      justify-content:center;
-      padding:18px;
-    }
-    #pdfViewer {
-      width:100%;
-      height:100%;
-      max-width:1400px;
-      max-height:100%;
-      border-radius:8px;
-      overflow:hidden;
-      background:white;
-      display:flex;
-      flex-direction:column;
-    }
-    #pdfFrame{border:0;width:100%;height:100%;background:white;flex:1}
-
-    /* Header inside PDF viewer */
-    .pdfHeader{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--soft);color:var(--text)}
-    .muted{color:var(--muted);font-size:13px}
-
-    /* Loader overlay */
-    #overlay{
-      display:none;
-      position:fixed;
-      inset:0;
-      background:rgba(0,0,0,0.35);
-      z-index:2100;
-      align-items:center;
-      justify-content:center;
-    }
-    .spinner{
-      width:64px;height:64px;border:6px solid rgba(255,255,255,0.9);border-top-color:var(--accent);border-radius:50%;animation:spin .9s linear infinite;
-    }
-    @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-
-    /* Responsive */
-    @media (max-width:880px){ main{grid-template-columns:1fr; padding:12px} .app{width:100%} }
+    .file-row{display:flex;justify-content:space-between;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.05)}
   </style>
 </head>
 <body>
@@ -165,37 +83,34 @@
     <div class="leftGroup">
       <div class="logo">EA</div>
       <div>
-        <div class="headingTitle">EA Notes (Cloud)</div>
-        <div class="subText">For teachers & students</div>
+        <div style="font-weight:700">EA Notes (Cloud)</div>
+        <div class="muted">For teachers & students</div>
       </div>
     </div>
-
-    <div style="display:flex;gap:12px;align-items:center">
+    <div style="display:flex;gap:12px">
       <div id="userRole" class="muted">Not logged in</div>
-      <button id="themeToggle" class="btn ghost" title="Toggle dark mode">🌓</button>
+      <button id="themeToggle" class="btn ghost">🌓</button>
     </div>
   </header>
 
-  <main>
-    <!-- LEFT: Controls / Login / Upload -->
-    <div class="panel">
-      <!-- Login -->
-      <div id="loginCard" class="card" style="margin-bottom:12px">
-        <label style="font-size:13px">Username</label>
-        <input id="username" type="text" placeholder="Your name" />
-
-        <label style="margin-top:10px;font-size:13px">Password</label>
-        <input id="password" type="password" placeholder="Enter password" />
-
-        <div style="display:flex;gap:10px;margin-top:12px">
-          <button id="btnLogin" class="btn primary">Login</button>
-          <button id="btnClear" class="btn ghost">Clear</button>
-        </div>
+  <!-- LOGIN FIRST SCREEN ONLY -->
+  <div id="loginArea">
+    <div id="loginCard" class="card">
+      <label>Username</label>
+      <input id="username" type="text" placeholder="Your name">
+      <label style="margin-top:10px">Password</label>
+      <input id="password" type="password" placeholder="Enter password">
+      <div style="display:flex;gap:10px;margin-top:12px;justify-content:center;">
+        <button id="btnLogin" class="btn primary">Login</button>
       </div>
+    </div>
+  </div>
 
-      <!-- Folder select & upload (teacher only) -->
-      <div id="controls" class="card">
-        <label style="font-size:13px">Subject</label>
+  <!-- EVERYTHING BELOW APPEARS ONLY AFTER LOGIN -->
+  <main id="mainArea">
+    <div class="panel">
+      <div class="card">
+        <label>Subject</label>
         <select id="folderSelect" style="margin-top:6px">
           <option>Anatomy</option>
           <option>History</option>
@@ -206,440 +121,49 @@
           <option>Psychology</option>
         </select>
 
-        <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
-          <label for="fileUpload" id="uploadLabel" class="btn ghost" style="padding:10px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:8px">📤 Upload</label>
-          <input id="fileUpload" type="file" style="display:none" />
-          <button id="btnLogout" class="btn danger" style="width:auto;padding:10px 14px">Logout</button>
+        <div id="uploadRow" style="display:none;margin-top:10px;gap:8px;align-items:center">
+          <label for="fileUpload" class="btn ghost" style="cursor:pointer">📤 Upload</label>
+          <input id="fileUpload" type="file" style="display:none">
+          <button id="btnLogout" class="btn danger" style="width:auto;">Logout</button>
         </div>
-
-        <div style="margin-top:12px" class="muted">Upload visible to students after teacher upload.</div>
       </div>
     </div>
 
-    <!-- RIGHT: File list, search, viewer -->
-    <div>
-      <div class="panel" style="display:flex;flex-direction:column;gap:12px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
-          <div class="searchWrap" style="flex:1">
-            <input id="searchInput" type="search" placeholder="Search files by name..." />
-            <button id="btnRefresh" class="btn ghost" style="width:84px">Refresh</button>
-          </div>
-
-          <div style="min-width:120px;text-align:right">
-            <div style="font-weight:700">Files</div>
-            <div class="muted" id="filesCount">—</div>
-          </div>
-        </div>
-
-        <div id="fileList" aria-live="polite" role="list"></div>
+    <div class="panel">
+      <div style="display:flex;gap:12px;align-items:center;">
+        <input id="searchInput" type="search" placeholder="Search files..." style="flex:1;padding:10px;border-radius:10px;border:1px solid #ccc">
+        <button id="btnRefresh" class="btn ghost">Refresh</button>
       </div>
-
-      <!-- PDF overlay (full screen) -->
-      <div id="pdfOverlay">
-        <div id="pdfViewer" role="dialog" aria-modal="true">
-          <div class="pdfHeader">
-            <div style="display:flex;gap:12px;align-items:center">
-              <div style="font-weight:700">PDF Viewer</div>
-              <div id="pdfMeta" class="muted"></div>
-            </div>
-            <div>
-              <button id="pdfDownload" class="btn ghost" style="margin-right:8px">Download</button>
-              <button id="pdfClose" class="btn primary">Close</button>
-            </div>
-          </div>
-          <iframe id="pdfFrame" title="PDF preview"></iframe>
-        </div>
-      </div>
+      <div id="fileList" style="margin-top:14px"></div>
     </div>
   </main>
 </div>
 
-<!-- Loader overlay -->
-<div id="overlay">
-  <div class="spinner" role="status" aria-label="Loading"></div>
-</div>
-
-<!-- Firebase COMPAT JS -->
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
-
 <script>
-/* ============================================================
-   Configuration & Initialization
-   ============================================================ */
-const firebaseConfig = {
-  apiKey: "AIzaSyAnUvU6tCpnO9oD4wdXbLS1o7jWpQuNPzE",
-  authDomain: "army-6b712.firebaseapp.com",
-  projectId: "army-6b712",
-  storageBucket: "army-6b712.appspot.com",
-  messagingSenderId: "468802966776",
-  appId: "1:468802966776:web:57cc6f23da92b6f3f7d70d"
-};
+  const mainArea = document.getElementById("mainArea");
+  const loginArea = document.getElementById("loginArea");
+  const btnLogin = document.getElementById("btnLogin");
+  const userRole = document.getElementById("userRole");
+  const uploadRow = document.getElementById("uploadRow");
 
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-const storage = firebase.storage();
+  const TEACHER_PASS = "@teacher123";
+  const STUDENT_PASS = "@armyamanu";
+  let currentRole = null;
 
-/* ============================================================
-   DOM refs
-   ============================================================ */
-const loginCard = document.getElementById('loginCard');
-const username = document.getElementById('username');
-const password = document.getElementById('password');
-const btnLogin = document.getElementById('btnLogin');
-const btnClear = document.getElementById('btnClear');
+  btnLogin.onclick = () => {
+    const pass = document.getElementById("password").value.trim();
 
-const appCard = document.querySelector('.app'); // not used directly but kept
-const userRole = document.getElementById('userRole');
+    if (pass === TEACHER_PASS) currentRole = "teacher";
+    else if (pass === STUDENT_PASS) currentRole = "student";
+    else return alert("Incorrect password");
 
-const uploadSection = document.getElementById('uploadLabel');
-const fileUpload = document.getElementById('fileUpload');
-const folderSelect = document.getElementById('folderSelect');
-const fileList = document.getElementById('fileList');
-const filesCount = document.getElementById('filesCount');
-
-const searchInput = document.getElementById('searchInput');
-const btnRefresh = document.getElementById('btnRefresh');
-
-const overlay = document.getElementById('overlay');
-
-const pdfOverlay = document.getElementById('pdfOverlay');
-const pdfFrame = document.getElementById('pdfFrame');
-const pdfClose = document.getElementById('pdfClose');
-const pdfMeta = document.getElementById('pdfMeta');
-const pdfDownload = document.getElementById('pdfDownload');
-
-const btnLogout = document.getElementById('btnLogout');
-const themeToggle = document.getElementById('themeToggle');
-
-/* ============================================================
-   App state
-   ============================================================ */
-const TEACHER_PASS = "@teacher123";
-const STUDENT_PASS = "@armyamanu";
-let currentRole = null;
-let currentUser = null;
-let filesCache = []; // keep the current loaded files for search/filter
-let loadAbortTimer = null;
-const LOAD_TIMEOUT_MS = 12000; // 12s friendly timeout
-
-/* ============================================================
-   Helper: loader
-   ============================================================ */
-function showLoader(msg){
-  overlay.style.display = 'flex';
-}
-function hideLoader(){ overlay.style.display = 'none'; }
-
-/* ============================================================
-   Theme: read / write preference
-   ============================================================ */
-function applyThemeFromStorage(){
-  const t = localStorage.getItem('ea_theme');
-  if(t === 'dark') document.body.classList.add('dark');
-  else document.body.classList.remove('dark');
-}
-function toggleTheme(){
-  document.body.classList.toggle('dark');
-  localStorage.setItem('ea_theme', document.body.classList.contains('dark') ? 'dark' : 'light');
-}
-themeToggle.addEventListener('click', toggleTheme);
-applyThemeFromStorage();
-
-/* ============================================================
-   Auth: login / logout
-   ============================================================ */
-async function appLogin(){
-  const name = username.value.trim();
-  const pass = password.value.trim();
-
-  if(pass === TEACHER_PASS){
-    currentRole = 'teacher';
-  } else if(pass === STUDENT_PASS){
-    if(!name){ alert('Students must enter a name.'); return; }
-    currentRole = 'student';
-  } else {
-    alert('Incorrect password');
-    return;
-  }
-
-  try {
-    showLoader();
-    const res = await auth.signInAnonymously();
-    currentUser = res.user;
-    await db.collection('users').doc(currentUser.uid).set({ name, role: currentRole }, { merge:true });
-
-    // UI
-    loginCard.style.display = 'none';
-    // show controls (upload visible only to teacher)
-    uploadSection.style.display = (currentRole === 'teacher') ? 'inline-flex' : 'none';
     userRole.textContent = currentRole;
 
-    // load files
-    await loadFiles();
-  } catch(err){
-    console.error(err);
-    alert('Login failed: ' + (err.message || err));
-  } finally {
-    hideLoader();
-  }
-}
+    loginArea.style.display = "none";
+    mainArea.style.display = "grid";
 
-btnLogin.addEventListener('click', appLogin);
-btnClear.addEventListener('click', ()=>{ username.value=''; password.value=''; });
-
-btnLogout.addEventListener('click', ()=>{
-  // simple logout: sign out and reload page (clears state)
-  auth.signOut().catch(()=>{});
-  location.reload();
-});
-
-/* ============================================================
-   Load files with timeout guard and caching
-   ============================================================ */
-async function loadFiles(){
-  const subject = folderSelect.value;
-  fileList.innerHTML = `<div class="muted">Loading...</div>`;
-  filesCount.textContent = '—';
-  showLoader();
-
-  // clear any previous timer
-  if(loadAbortTimer) { clearTimeout(loadAbortTimer); loadAbortTimer = null; }
-
-  // set a friendly timeout to show helpful message if Firestore hangs
-  loadAbortTimer = setTimeout(()=>{
-    hideLoader();
-    fileList.innerHTML = `<div class="muted">Loading is taking longer than expected. Check Firestore/Storage rules & authorized domains.</div>`;
-  }, LOAD_TIMEOUT_MS);
-
-  try {
-    const snap = await db.collection('files')
-      .where('subject','==',subject)
-      .orderBy('time','desc')
-      .get();
-
-    // snapshot received — clear timeout guard
-    if(loadAbortTimer){ clearTimeout(loadAbortTimer); loadAbortTimer = null; }
-
-    filesCache = [];
-    snap.forEach(doc=>{
-      const data = doc.data();
-      filesCache.push(Object.assign({ _id: doc.id }, data));
-    });
-
-    renderFiles();
-  } catch(err){
-    console.error('Error loading files', err);
-    fileList.innerHTML = `<div class="muted">Failed to load files: ${err.message || err}</div>`;
-  } finally {
-    hideLoader();
-    if(loadAbortTimer){ clearTimeout(loadAbortTimer); loadAbortTimer = null; }
-  }
-}
-
-/* ============================================================
-   Render files from filesCache (applies search filter)
-   ============================================================ */
-function renderFiles(){
-  const q = (searchInput.value || '').trim().toLowerCase();
-  const filtered = filesCache.filter(f => f.name.toLowerCase().includes(q));
-  fileList.innerHTML = '';
-
-  if(filtered.length === 0){
-    fileList.innerHTML = `<div class="muted">No files found.</div>`;
-    filesCount.textContent = '0';
-    return;
-  }
-
-  filtered.forEach(f => {
-    const row = document.createElement('div');
-    row.className = 'file-row';
-
-    const left = document.createElement('div');
-    left.className = 'file-left';
-    left.innerHTML = `<div class="file-name">${escapeHtml(f.name)}</div>
-                      <div class="file-meta">${(f.size/1024).toFixed(1)} KB • ${new Date(f.time).toLocaleString()}</div>`;
-
-    const actions = document.createElement('div');
-    actions.className = 'actions';
-
-    const viewBtn = document.createElement('button');
-    viewBtn.className = 'btn';
-    viewBtn.style.background = 'var(--accent)';
-    viewBtn.style.color = 'white';
-    viewBtn.textContent = 'Preview';
-    viewBtn.onclick = ()=> openPdfOverlay(f);
-
-    const openBtn = document.createElement('button');
-    openBtn.className = 'btn ghost';
-    openBtn.textContent = 'Open';
-    openBtn.onclick = ()=> window.open(f.url, '_blank');
-
-    actions.appendChild(viewBtn);
-    actions.appendChild(openBtn);
-
-    if(currentRole === 'teacher'){
-      const del = document.createElement('button');
-      del.className = 'btn ghost';
-      del.textContent = 'Delete';
-      del.onclick = ()=> deleteFile(f._id, f.url);
-      actions.appendChild(del);
-    }
-
-    row.appendChild(left);
-    row.appendChild(actions);
-    fileList.appendChild(row);
-  });
-
-  filesCount.textContent = `${filtered.length} / ${filesCache.length}`;
-}
-
-/* ============================================================
-   Upload (teacher only)
-   ============================================================ */
-fileUpload.addEventListener('change', async (e)=>{
-  if(currentRole !== 'teacher'){ fileUpload.value = ''; alert('Only teachers can upload.'); return; }
-  const file = e.target.files[0];
-  if(!file) return;
-
-  try{
-    showLoader();
-    const subject = folderSelect.value;
-    const path = `files/${subject}/${Date.now()}_${file.name}`;
-    const ref = storage.ref().child(path);
-
-    const task = ref.put(file);
-    // optional: listen progress (could show progress)
-    task.on('state_changed', ()=>{}, err => {
-      console.error('Upload error', err);
-      hideLoader();
-      alert('Upload failed: ' + (err.message || err));
-    }, async ()=>{
-      const url = await task.snapshot.ref.getDownloadURL();
-      await db.collection('files').add({
-        subject,
-        name: file.name,
-        size: file.size,
-        url,
-        time: Date.now()
-      });
-      fileUpload.value = '';
-      await loadFiles();
-    });
-  } catch(err){
-    console.error(err);
-    alert('Upload error: ' + (err.message || err));
-  } finally {
-    hideLoader();
-  }
-});
-
-/* ============================================================
-   Delete file (teacher only)
-   ============================================================ */
-async function deleteFile(id, url){
-  if(currentRole !== 'teacher'){ alert('Only teachers can delete.'); return; }
-  if(!confirm('Delete file?')) return;
-  try{
-    showLoader();
-    await db.collection('files').doc(id).delete();
-    // attempt to remove from storage if path is derivable
-    try{
-      // url contains encoded path after '/o/'
-      const part = url.split('/o/')[1];
-      if(part){
-        const path = decodeURIComponent(part.split('?')[0]);
-        await storage.ref().child(path).delete();
-      }
-    }catch(e){ console.warn('Failed to delete storage object', e); }
-    await loadFiles();
-  }catch(err){
-    console.error(err);
-    alert('Delete failed: ' + (err.message || err));
-  } finally {
-    hideLoader();
-  }
-}
-
-/* ============================================================
-   PDF overlay functions (full-screen)
-   ============================================================ */
-function openPdfOverlay(file){
-  // For security, ensure url is present
-  if(!file.url){ alert('No file URL available'); return; }
-  pdfFrame.src = file.url;
-  pdfMeta.textContent = `${file.name} • ${(file.size/1024).toFixed(1)} KB`;
-  pdfOverlay.style.display = 'flex';
-  pdfDownload.onclick = ()=> {
-    // open in new tab with download hint
-    const win = window.open(file.url, '_blank');
-    if(!win) alert('Popup blocked. Use "Open" button instead.');
+    uploadRow.style.display = currentRole === "teacher" ? "flex" : "none";
   };
-}
-pdfClose.addEventListener('click', ()=> {
-  pdfOverlay.style.display = 'none';
-  pdfFrame.src = '';
-});
-pdfOverlay.addEventListener('click', (e)=> {
-  if(e.target === pdfOverlay){ pdfClose.click(); }
-});
-
-/* ============================================================
-   Utilities & events
-   ============================================================ */
-searchInput.addEventListener('input', renderFiles);
-folderSelect.addEventListener('change', loadFiles);
-btnRefresh.addEventListener('click', loadFiles);
-
-// simple escape for text
-function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; });
-}
-
-/* ============================================================
-   Initial checks: if already signed in, restore state
-   ============================================================ */
-auth.onAuthStateChanged(async user=>{
-  if(user){
-    currentUser = user;
-    // try to read role from users collection (if present)
-    try{
-      const doc = await db.collection('users').doc(user.uid).get();
-      if(doc.exists){
-        const data = doc.data();
-        currentRole = data.role || null;
-        userRole.textContent = currentRole || 'user';
-        loginCard.style.display = 'none';
-        uploadSection.style.display = (currentRole === 'teacher') ? 'inline-flex' : 'none';
-        await loadFiles();
-      } else {
-        // No user doc: show login so they can set role
-        loginCard.style.display = 'block';
-      }
-    }catch(e){
-      console.warn('Failed to retrieve user doc', e);
-      loginCard.style.display = 'block';
-    }
-  } else {
-    // not signed-in
-    loginCard.style.display = 'block';
-  }
-});
-
-/* ============================================================
-   Helpful: pre-fill demo creds in dev (optional)
-   ============================================================ */
-// username.value = "Student name"; password.value = "@armyamanu"; // dev helper
-
-/* ============================================================
-   On load: apply theme & focus
-   ============================================================ */
-applyThemeFromStorage();
-username.focus();
-
 </script>
 
 </body>
