@@ -19,10 +19,8 @@ async function login() {
     return;
   }
 
-  // ✔ Convert name to email format (your system doesn't use real emails)
   const email = `${name}@eanotes.com`;
 
-  // ✔ Sign in using Supabase
   const { error } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -46,14 +44,14 @@ document.getElementById("btnLogin").addEventListener("click", login);
 async function logout() {
   await supabase.auth.signOut();
 
-  document.getElementById("loginBox").style.display = "block";
-  document.getElementById("dashboard").style.display = "none";
+  document.getElementById("loginBox").classList.remove("hidden");
+  document.getElementById("dashboard").classList.add("hidden");
 }
 
 document.getElementById("logoutBtn").addEventListener("click", logout);
 
 // --------------------------------------------------------------
-//                  CHECK CURRENT USER SESSION
+//                     CHECK USER SESSION
 // --------------------------------------------------------------
 
 async function checkUser() {
@@ -62,21 +60,20 @@ async function checkUser() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    document.getElementById("loginBox").style.display = "block";
-    document.getElementById("dashboard").style.display = "none";
+    document.getElementById("loginBox").classList.remove("hidden");
+    document.getElementById("dashboard").classList.add("hidden");
     return;
   }
 
-  document.getElementById("loginBox").style.display = "none";
-  document.getElementById("dashboard").style.display = "block";
+  document.getElementById("loginBox").classList.add("hidden");
+  document.getElementById("dashboard").classList.remove("hidden");
 
   const name = user.email.split("@")[0];
   const role = user.user_metadata.role || "student";
 
-  document.getElementById("roleTag").innerText = role;
   document.getElementById("welcomeText").innerText = `Welcome, ${name}`;
+  document.getElementById("roleTag").innerText = role;
 
-  // Teacher can upload, student cannot
   document.getElementById("uploadBtn").style.display =
     role === "teacher" ? "block" : "none";
 
@@ -84,7 +81,7 @@ async function checkUser() {
 }
 
 // --------------------------------------------------------------
-//                        UPLOAD FILE
+//                     UPLOAD FILE (PDF)
 // --------------------------------------------------------------
 
 document
@@ -107,50 +104,24 @@ async function upload() {
   const fileName = `${Date.now()}_${file.name}`;
   const filePath = `${subject}/${fileName}`;
 
-  // ------------------ Progress UI -------------------
-  const progressBox = document.createElement("div");
-  progressBox.className = "progress-box";
-  progressBox.innerHTML = `
-        <div><b>${file.name}</b></div>
-        <div class="progress-bar" id="bar"></div>
-        <div class="progress-text" id="pct">0%</div>
-    `;
-  document.getElementById("fileList").prepend(progressBox);
+  // Upload file normally (no chunking)
+  const { error: uploadError } = await supabase.storage
+    .from("files")
+    .upload(filePath, file, { upsert: false });
 
-  // ------------------ Chunk Upload -------------------
-  const chunk = 200 * 1024;
-  let uploaded = 0;
-
-  while (uploaded < file.size) {
-    const chunkPart = file.slice(uploaded, uploaded + chunk);
-
-    const { error } = await supabase.storage
-      .from("files")
-      .upload(filePath, chunkPart, {
-        upsert: true,
-        metadata: { offset: uploaded },
-      });
-
-    if (error) {
-      alert(error.message);
-      progressBox.remove();
-      return;
-    }
-
-    uploaded += chunk;
-    const percent = Math.min(100, Math.floor((uploaded / file.size) * 100));
-    progressBox.querySelector("#bar").style.width = percent + "%";
-    progressBox.querySelector("#pct").innerText = percent + "%";
+  if (uploadError) {
+    alert(uploadError.message);
+    return;
   }
 
-  // ------------------ Public URL ---------------------
+  // Get public URL
   const { data: urlData } = supabase.storage
     .from("files")
     .getPublicUrl(filePath);
 
   const publicUrl = urlData.publicUrl;
 
-  // ------------------ Insert DB -----------------------
+  // Save file info to database
   const { error: dbError } = await supabase.from("files").insert({
     name: file.name,
     subject,
@@ -163,20 +134,14 @@ async function upload() {
     return;
   }
 
-  // Replace progress with real file item
-  progressBox.remove();
-  displayFile({
-    name: file.name,
-    subject,
-    url: publicUrl,
-    path: filePath,
-  });
-
+  alert("Upload successful!");
   document.getElementById("realFileInput").value = "";
+
+  loadFiles();
 }
 
 // --------------------------------------------------------------
-//                         LOAD FILES
+//                        LOAD FILES
 // --------------------------------------------------------------
 
 async function loadFiles() {
@@ -185,46 +150,44 @@ async function loadFiles() {
   const { data, error } = await supabase
     .from("files")
     .select("*")
-    .eq("subject", subject);
+    .eq("subject", subject)
+    .order("created_at", { ascending: false });
+
+  if (error) return;
 
   const list = document.getElementById("fileList");
   list.innerHTML = "";
-
-  if (!data) return;
 
   data.forEach(displayFile);
 }
 
 // --------------------------------------------------------------
-//                      DISPLAY SINGLE FILE
+//                     DISPLAY FILE ITEM
 // --------------------------------------------------------------
 
 function displayFile(file) {
-  const row = document.createElement("div");
-  row.className = "file-item";
+  const div = document.createElement("div");
+  div.className = "file-item";
 
-  row.innerHTML = `
-        <span>${file.name}</span>
-        <div>
-            <a href="${file.url}" target="_blank">Open</a>
-            <button onclick="deleteFile('${file.path}')">Delete</button>
-        </div>
-    `;
+  div.innerHTML = `
+    <span>${file.name}</span>
+    <div>
+        <a href="${file.url}" target="_blank">Open</a>
+        <button onclick="deleteFile('${file.path}')">Delete</button>
+    </div>
+  `;
 
-  document.getElementById("fileList").appendChild(row);
+  document.getElementById("fileList").appendChild(div);
 }
 
 // --------------------------------------------------------------
-//                          DELETE FILE
+//                         DELETE FILE
 // --------------------------------------------------------------
 
 async function deleteFile(path) {
   if (!confirm("Delete this file?")) return;
 
-  // delete from storage
   await supabase.storage.from("files").remove([path]);
-
-  // delete from DB
   await supabase.from("files").delete().eq("path", path);
 
   loadFiles();
