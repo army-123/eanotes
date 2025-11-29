@@ -1,151 +1,141 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>EA Notes Cloud (Supabase)</title>
-
-  <!-- Supabase JS (must be loaded before your script.js) -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <!-- Firebase v8 CDN (Auth + Firestore for teacher accounts/metadata) -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-
+  <title>EA Notes Cloud</title>
   <style>
-    :root{
-      --bg:#eef1f6;
-      --card:#ffffff;
-      --text:#111;
-      --soft:#e4e8ef;
-      --accent:#2467ff;
-      --danger:#e84040;
-    }
-    body.dark{
-      --bg:#0b1220; --card:#0e1a2b; --text:#e6eefc; --soft:#1a2739; --accent:#3b82f6; --danger:#ff4c4c;
-    }
-
-    body {
-      margin:0; font-family:Arial, sans-serif; background:var(--bg); color:var(--text);
-      display:flex; justify-content:center; padding:20px;
-    }
-    .app {
-      width:900px; background:var(--card); padding:20px; border-radius:12px;
-      box-shadow:0 6px 24px rgba(0,0,0,0.06);
-    }
-    h2 { margin:0 0 12px 0; }
-
-    .btn {
-      padding:10px 14px; border-radius:10px; border:0; cursor:pointer; font-weight:600;
-    }
-    .primary { background:var(--accent); color:white; }
-    .danger { background:var(--danger); color:white; }
-    .ghost { background:none; border:1px solid var(--accent); color:var(--accent); }
-
-    input, select {
-      width:100%; padding:12px; border-radius:10px; border:1px solid #ccc; margin-top:6px;
-      background:var(--soft); color:var(--text);
-    }
-
-    #mainArea { display:none; margin-top:12px; }
-    #fileList { margin-top:15px; }
-
-    .file-row{
-      display:flex; justify-content:space-between; align-items:center;
-      padding:12px; background:var(--soft); border-radius:10px; margin-bottom:10px;
-    }
-
-    /* Loading overlay */
-    #loadingOverlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); display:none; align-items:center; justify-content:center; z-index:9999; }
-    .spinner { width:60px; height:60px; border:6px solid #ffffff44; border-top-color:white; border-radius:50%; animation:spin .8s linear infinite; }
-    @keyframes spin { to { transform:rotate(360deg); } }
-
-    /* PDF viewer */
-    #pdfOverlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); justify-content:center; align-items:center; z-index:10000; }
-    #pdfViewer { width:90%; height:90%; background:white; border-radius:10px; display:flex; flex-direction:column; }
-    iframe { flex:1; border:0; border-radius:0 0 10px 10px; }
-
-    /* upload progress */
-    #uploadProgressContainer { display:none; margin-top:15px; background:var(--soft); padding:10px; border-radius:10px; }
-    #uploadBar { width:0%; height:12px; background:var(--accent); border-radius:10px; transition:width .2s ease; }
-
-    /* small screens */
-    @media (max-width:640px){
-      .app { width:100%; padding:16px; border-radius:8px; }
-    }
+    body { font-family: Arial; padding: 20px; }
+    label { display: block; margin-top: 15px; }
+    button { margin-top: 10px; padding: 10px 20px; }
+    #status { margin-top: 10px; font-weight: bold; }
   </style>
 </head>
 <body>
 
-  <!-- Loading overlay -->
-  <div id="loadingOverlay"><div class="spinner"></div></div>
+<h2>EA Notes Cloud</h2>
 
-  <div class="app">
-    <h2>EA Notes Cloud</h2>
+<label>Email</label>
+<input id="email" type="text" placeholder="teacher@example.com">
 
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-      <div>
-        <button id="themeToggle" class="btn ghost">🌙</button>
-        <span id="userRole" style="margin-left:8px;">Not logged in</span>
-      </div>
-    </div>
+<label>Password</label>
+<input id="password" type="password">
 
-    <!-- LOGIN -->
-    <div id="loginArea">
-      <label>Teacher Email OR Student Name</label>
-      <input id="username" type="text" placeholder="e.g. teacher@example.com or John Doe">
+<button onclick="login()">Login</button>
+<button onclick="logout()">Logout</button>
 
-      <label>Password</label>
-      <input id="password" type="password" placeholder="Teachers: your email password — Students: common password">
+<hr>
 
-      <button id="btnLogin" class="btn primary" style="width:100%; margin-top:10px;">Login</button>
-    </div>
+<h3>Upload PDF</h3>
 
-    <!-- MAIN -->
-    <div id="mainArea">
-      <label>Select Subject</label>
-      <select id="folderSelect">
-        <option>Anatomy</option>
-        <option>History</option>
-        <option>Inclusiveness</option>
-        <option>Civics</option>
-        <option>Global affairs</option>
-        <option>Geography</option>
-        <option>Psychology</option>
-      </select>
+<label>Select Subject</label>
+<select id="subject">
+  <option>Anatomy</option>
+  <option>Physiology</option>
+  <option>Pathology</option>
+  <option>Biochemistry</option>
+  <option>Pharmacology</option>
+</select>
 
-      <div style="margin-top:10px; display:flex; gap:10px; align-items:center;">
-        <label id="uploadBtn" for="fileUpload" class="btn ghost" style="display:none; cursor:pointer;">Upload PDF</label>
-        <input id="fileUpload" type="file" accept="application/pdf" style="display:none;">
-        <button id="btnLogout" class="btn danger">Logout</button>
-      </div>
+<br><br>
+<input id="fileInput" type="file" accept="application/pdf">
 
-      <!-- upload progress -->
-      <div id="uploadProgressContainer">
-        <div style="margin-bottom:8px;">Uploading… <span id="uploadPercent">0%</span></div>
-        <div id="uploadBar"></div>
-      </div>
+<button onclick="uploadFile()">Upload PDF</button>
 
-      <input id="searchInput" placeholder="Search files..." style="margin-top:16px;">
-      <button id="btnRefresh" class="btn ghost" style="margin-top:10px;">Refresh</button>
+<p id="status">Waiting...</p>
 
-      <div id="fileList"></div>
-    </div>
-  </div>
+<hr>
 
-  <!-- PDF Viewer -->
-  <div id="pdfOverlay">
-    <div id="pdfViewer">
-      <div style="display:flex; justify-content:space-between; padding:10px;">
-        <span id="pdfName"></span>
-        <button id="closePdf" class="btn primary">Close</button>
-      </div>
-      <iframe id="pdfFrame"></iframe>
-    </div>
-  </div>
+<h3>Files</h3>
+<button onclick="loadFiles()">Refresh</button>
 
-  <!-- Your script: replace script.js with the Supabase-enabled script provided earlier -->
-  <script src="script.js"></script>
+<div id="fileList"></div>
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js";
+
+const supabase = createClient(
+  "https://hlstgluwamsuuqlctdzk.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhsc3RnbHV3YW1zdXVxbGN0ZHprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyNzMwMzQsImV4cCI6MjA3OTg0OTAzNH0.KUPx3pzrcd3H5aEx2B7mFosWNUVOEzXDD5gL-TmyawQ"
+);
+
+async function login() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+  if (error) alert("Login failed: " + error.message);
+  else alert("Login success!");
+
+  loadFiles();
+}
+
+async function logout() {
+  await supabase.auth.signOut();
+  alert("Logged out");
+}
+
+async function uploadFile() {
+  const file = document.getElementById("fileInput").files[0];
+  const subject = document.getElementById("subject").value;
+
+  if (!file) {
+    alert("Select a PDF first!");
+    return;
+  }
+
+  document.getElementById("status").innerHTML = "Uploading...";
+
+  const fileName = `${Date.now()}-${file.name}`;
+
+  // upload to bucket
+  let { data, error } = await supabase
+    .storage
+    .from("files")
+    .upload(fileName, file);
+
+  if (error) {
+    alert("Upload error: " + error.message);
+    return;
+  }
+
+  // get public URL
+  const { data: urlData } = supabase
+    .storage
+    .from("files")
+    .getPublicUrl(fileName);
+
+  // insert DB record
+  await supabase.from("files").insert({
+    name: file.name,
+    subject: subject,
+    url: urlData.publicUrl
+  });
+
+  document.getElementById("status").innerHTML = "Uploaded!";
+  loadFiles();
+}
+
+async function loadFiles() {
+  const { data, error } = await supabase.from("files").select("*").order("created_at", { ascending: false });
+
+  if (error) {
+    alert("Error loading files: " + error.message);
+    return;
+  }
+
+  let html = "";
+  data.forEach(f => {
+    html += `
+      <p>
+        <b>${f.subject}</b> — ${f.name}
+        <a href="${f.url}" target="_blank">Open</a>
+      </p>
+    `;
+  });
+
+  document.getElementById("fileList").innerHTML = html;
+}
+</script>
+
 </body>
 </html>
