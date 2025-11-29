@@ -3,53 +3,35 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EA Notes</title>
+  <title>EA Notes - Folder & Login Version</title>
 
   <style>
     body {
       font-family: Arial, sans-serif;
       background: #f5f5f5;
       margin: 0;
-      padding: 20px;
-      transition: background 0.3s, color 0.3s;
+      padding: 0;
+      transition: 0.3s;
     }
-
     body.dark {
       background: #121212;
       color: #ddd;
     }
 
-    .container {
+    .login-container, .app-container {
       max-width: 600px;
       margin: auto;
+      padding: 20px;
+    }
+
+    .card {
       background: white;
       padding: 20px;
-      border-radius: 15px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.1);
-      transition: background 0.3s;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
     }
-
-    body.dark .container {
-      background: #1e1e1e;
-    }
-
-    textarea {
-      width: 100%;
-      height: 120px;
-      padding: 12px;
-      border-radius: 10px;
-      border: 1px solid #ccc;
-      font-size: 1rem;
-      resize: none;
-      background: #fff;
-      color: #000;
-      transition: background 0.3s, color 0.3s;
-    }
-
-    body.dark textarea {
-      background: #2b2b2b;
-      color: #eee;
-      border: 1px solid #555;
+    body.dark .card {
+      background: #1f1f1f;
     }
 
     button {
@@ -60,29 +42,34 @@
       border: none;
       border-radius: 10px;
       cursor: pointer;
-      font-size: 1rem;
       margin-top: 10px;
-      transition: opacity 0.2s;
     }
-
     body.dark button {
       background: #333;
     }
 
-    button:hover {
-      opacity: 0.85;
+    select, input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+    }
+    body.dark select,
+    body.dark input {
+      background: #2a2a2a;
+      color: #ddd;
+      border: 1px solid #555;
     }
 
-    .note {
-      padding: 12px;
+    .file-item {
       background: #eee;
+      padding: 12px;
       border-radius: 10px;
       margin-top: 10px;
       position: relative;
-      transition: background 0.3s;
     }
-
-    body.dark .note {
+    body.dark .file-item {
       background: #2b2b2b;
     }
 
@@ -93,116 +80,137 @@
       background: red;
       color: white;
       border: none;
-      border-radius: 6px;
-      padding: 4px 8px;
+      padding: 4px 6px;
+      border-radius: 5px;
       cursor: pointer;
-      font-size: 0.8rem;
-    }
-
-    #darkToggle {
-      margin-bottom: 10px;
     }
   </style>
 </head>
-
 <body>
 
-  <div class="container">
-
-    <!-- Dark Mode Toggle -->
-    <button id="darkToggle" onclick="toggleDarkMode()">🌙 Toggle Dark Mode</button>
-
-    <h1>EA Notes</h1>
-
-    <!-- File Upload -->
-    <input type="file" id="fileInput" accept=".txt" onchange="uploadFile()" />
-    <br><br>
-
-    <textarea id="noteInput" placeholder="Write a note..."></textarea>
-    <button onclick="addNote()">Save Note</button>
-
-    <h2>Your Notes</h2>
-    <div id="notesList"></div>
+<div id="loginPage" class="login-container">
+  <div class="card">
+    <h2>Login</h2>
+    <input id="username" placeholder="Enter username" />
+    <input id="password" type="password" placeholder="Enter password" />
+    <button onclick="login()">Login</button>
+    <button onclick="toggleDark()">🌙 Toggle Dark Mode</button>
   </div>
+</div>
 
-  <script>
-    // Load notes & theme on startup
-    window.onload = () => {
-      loadNotes();
-      loadDarkMode();
-    };
+<div id="appPage" class="app-container" style="display:none;">
+  <div class="card">
+    <h2>EA Notes</h2>
 
-    // Add a note
-    function addNote() {
-      const text = document.getElementById("noteInput").value.trim();
-      if (text === "") return alert("Write something!");
+    <select id="folderSelect">
+      <option value="Anatomy">Anatomy</option>
+      <option value="History">History</option>
+      <option value="Inclusiveness">Inclusiveness</option>
+      <option value="Civics">Civics</option>
+      <option value="Global affairs">Global affairs</option>
+      <option value="Geography">Geography</option>
+      <option value="Psychology">Psychology</option>
+    </select>
 
-      const notes = JSON.parse(localStorage.getItem("notes")) || [];
-      notes.push(text);
+    <input type="file" id="fileUpload" onchange="uploadFile()" />
 
-      localStorage.setItem("notes", JSON.stringify(notes));
-      document.getElementById("noteInput").value = "";
-      loadNotes();
+    <h3>Uploaded Files</h3>
+    <div id="fileList"></div>
+
+    <button onclick="logout()" style="background:red;">Logout</button>
+    <button onclick="toggleDark()">🌙 Toggle Dark Mode</button>
+  </div>
+</div>
+
+<script>
+  window.onload = () => {
+    if (localStorage.getItem('darkMode') === 'true') document.body.classList.add('dark');
+    if (localStorage.getItem('loggedIn') === 'true') showApp();
+  };
+
+  function toggleDark() {
+    document.body.classList.toggle('dark');
+    localStorage.setItem('darkMode', document.body.classList.contains('dark'));
+  }
+
+  /* LOGIN SYSTEM */
+  function login() {
+    const user = document.getElementById("username").value;
+    const pass = document.getElementById("password").value;
+
+    if (user === "admin" && pass === "1234") {
+      localStorage.setItem("loggedIn", "true");
+      showApp();
+    } else {
+      alert("Incorrect username or password");
     }
+  }
 
-    // Delete a note
-    function deleteNote(index) {
-      const notes = JSON.parse(localStorage.getItem("notes")) || [];
-      notes.splice(index, 1);
-      localStorage.setItem("notes", JSON.stringify(notes));
-      loadNotes();
-    }
+  function logout() {
+    localStorage.removeItem("loggedIn");
+    location.reload();
+  }
 
-    // Load all notes
-    function loadNotes() {
-      const notes = JSON.parse(localStorage.getItem("notes")) || [];
-      const list = document.getElementById("notesList");
+  function showApp() {
+    document.getElementById("loginPage").style.display = "none";
+    document.getElementById("appPage").style.display = "block";
+    loadFiles();
+  }
 
-      list.innerHTML = "";
+  /* FILE SYSTEM */
+  function uploadFile() {
+    const folder = document.getElementById("folderSelect").value;
+    const file = document.getElementById("fileUpload").files[0];
+    if (!file) return;
 
-      notes.forEach((note, i) => {
-        list.innerHTML += `
-          <div class="note">
-            ${note.replace(/\n/g, "<br>")}
-            <button class="delete-btn" onclick="deleteNote(${i})">X</button>
-          </div>
-        `;
-      });
-    }
+    const reader = new FileReader();
 
-    // Upload notes from a .txt file
-    function uploadFile() {
-      const file = document.getElementById("fileInput").files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-
-      reader.onload = function(e) {
-        const content = e.target.result.trim();
-        if (content.length === 0) return alert("File is empty!");
-
-        const notes = JSON.parse(localStorage.getItem("notes")) || [];
-        notes.push(content);
-
-        localStorage.setItem("notes", JSON.stringify(notes));
-        loadNotes();
+    reader.onload = function(e) {
+      const data = {
+        name: file.name,
+        size: file.size,
+        content: e.target.result
       };
 
-      reader.readAsText(file);
-    }
+      const storageKey = `folder_${folder}`;
+      const files = JSON.parse(localStorage.getItem(storageKey) || "[]");
+      files.push(data);
+      localStorage.setItem(storageKey, JSON.stringify(files));
+      loadFiles();
+    };
 
-    // Toggle dark mode
-    function toggleDarkMode() {
-      document.body.classList.toggle("dark");
-      localStorage.setItem("darkMode", document.body.classList.contains("dark"));
-    }
+    reader.readAsDataURL(file);
+  }
 
-    // Load dark mode on startup
-    function loadDarkMode() {
-      const enabled = JSON.parse(localStorage.getItem("darkMode"));
-      if (enabled) document.body.classList.add("dark");
-    }
-  </script>
+  function loadFiles() {
+    const folder = document.getElementById("folderSelect").value;
+    const storageKey = `folder_${folder}`;
+    const files = JSON.parse(localStorage.getItem(storageKey) || "[]");
+
+    const list = document.getElementById("fileList");
+    list.innerHTML = "";
+
+    files.forEach((f, i) => {
+      list.innerHTML += `
+        <div class='file-item'>
+          <b>${f.name}</b><br>
+          <small>${(f.size / 1024).toFixed(2)} KB</small><br><br>
+          <a href='${f.content}' download='${f.name}'><button>Download</button></a>
+          <button class='delete-btn' onclick='deleteFile(${i})'>X</button>
+        </div>
+      `;
+    });
+  }
+
+  function deleteFile(i) {
+    const folder = document.getElementById("folderSelect").value;
+    const storageKey = `folder_${folder}`;
+    const files = JSON.parse(localStorage.getItem(storageKey) || "[]");
+    files.splice(i, 1);
+    localStorage.setItem(storageKey, JSON.stringify(files));
+    loadFiles();
+  }
+</script>
 
 </body>
 </html>
