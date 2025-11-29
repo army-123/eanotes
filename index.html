@@ -1,131 +1,191 @@
-<!-- FULLY FIXED VERSION: Firebase Upload + Display + Preview + Delete + Improved Dark Mode + Smooth Animations -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>EA Notes — Cloud Version (Final Fixed)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EA Notes — Secure Cloud</title>
 
+  <!-- Inter font -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+
   <style>
-    /* ============= THEME VARIABLES ============= */
-    :root{
-      --bg:#f4f7fb;
-      --card:#ffffff;
-      --muted:#7b8794;
-      --accent:#0b69ff;
-      --danger:#e23b3b;
-      --text:#111827;
-      --soft:#eef2f5;
-      --shadow:0 20px 50px rgba(2,6,23,0.12);
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --text: #111827;
+      --soft: #eef2f5;
+      --accent: #0b69ff;
+      --muted: #7b8794;
+      --danger: #e23b3b;
+      --shadow: 0 20px 50px rgba(2, 6, 23, 0.12);
     }
+
     body.dark {
-      --bg:#0b1220;
-      --card:#071422;
-      --muted:#9aa6b2;
-      --accent:#3b82f6;
-      --danger:#ff4c4c;
-      --text:#e6eefc;
-      --soft:#102030;
-      --shadow:0 20px 40px rgba(0,0,0,0.45);
+      --bg: #0b1220;
+      --card: #071422;
+      --text: #e6eefc;
+      --soft: #102030;
+      --accent: #3b82f6;
+      --muted: #9aa6b2;
+      --danger: #ff4c4c;
+      --shadow: 0 20px 40px rgba(0,0,0,0.45);
     }
 
-    /* ============= BASE ============= */
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      background:var(--bg);
-      font-family:Inter,system-ui;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:24px;
-      color:var(--text);
-      transition:background .35s ease, color .35s ease;
+    *{ box-sizing: border-box; }
+    body {
+      margin: 0; padding: 24px;
+      background: var(--bg);
+      font-family: Inter, system-ui;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text);
+      transition: background .35s ease, color .35s ease;
     }
 
-    /* ============= APP CONTAINER ============= */
-    .app{
-      width:980px;
-      max-width:98%;
-      background:var(--card);
-      border-radius:14px;
-      box-shadow:var(--shadow);
-      overflow:hidden;
-      transform:translateY(8px);
-      animation:fadeIn .6s ease forwards;
+    .app {
+      width: 980px; max-width: 98%;
+      background: var(--card);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      animation: fadeIn .6s ease forwards;
     }
-    @keyframes fadeIn{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
 
-    header{
-      padding:14px 20px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      border-bottom:1px solid rgba(0,0,0,0.08);
-      background:linear-gradient(90deg,var(--soft),transparent);
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(40px); }
+      to { opacity: 1; transform: translateY(0); }
     }
-    .logo{background:var(--accent);color:white;font-weight:700;width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;}
 
-    /* ============= SCREENS ============= */
-    #loginArea{padding:26px;text-align:center;animation:fadeIn .5s ease;}
-    #mainArea{display:none;padding:18px;gap:18px;grid-template-columns:320px 1fr;animation:fadeIn .5s ease;}
-
-    .panel{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.05);}
-    .card{background:var(--card);padding:12px;border-radius:10px;}
-
-    /* ============= FIELDS + BUTTONS ============= */
-    input, select{
-      width:100%;padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,0.1);
-      background:var(--soft);color:var(--text);
-      transition:background .25s ease,border .25s;
+    header {
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: linear-gradient(90deg, var(--soft), transparent);
+      border-bottom: 1px solid rgba(0,0,0,0.08);
     }
-    input:focus,select:focus{border-color:var(--accent)}
 
-    .btn{padding:10px 12px;border-radius:10px;border:none;font-weight:600;cursor:pointer;transition:.25s;}
-    .primary{background:var(--accent);color:white}
-    .primary:hover{opacity:.85}
-    .ghost{background:transparent;border:1px solid var(--accent);color:var(--accent)}
-    .ghost:hover{background:var(--accent);color:white}
-    .danger{background:var(--danger);color:white}
-    .danger:hover{opacity:.85}
-
-    /* ============= FILE LIST ============= */
-    #fileList{display:flex;flex-direction:column;gap:10px;max-height:66vh;overflow:auto;padding-right:6px}
-    .file-row{
-      display:flex;justify-content:space-between;align-items:center;
-      padding:12px;border-radius:10px;
-      background:linear-gradient(180deg,var(--soft),transparent);
-      border:1px solid rgba(0,0,0,0.06);
-      transition:.25s;
+    .logo {
+      background: var(--accent);
+      color: white;
+      font-weight: 700;
+      width: 46px; height: 46px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 10px;
+      font-size: 18px;
     }
-    .file-row:hover{transform:scale(1.01)}
 
-    /* ============= PDF FULLSCREEN VIEWER ============= */
-    #pdfOverlay{
-      display:none;position:fixed;inset:0;z-index:4000;
-      background:rgba(0,0,0,0.85);
-      align-items:center;justify-content:center;
-      animation:fadeIn .3s ease;
+    /* Screens */
+    #loginArea {
+      padding: 26px; text-align: center;
+      animation: fadeIn .5s ease;
     }
-    #pdfViewer{width:90%;height:90%;background:white;border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
-    #pdfFrame{flex:1;border:0;width:100%}
+    #mainArea {
+      display: none;
+      padding: 18px; gap: 18px;
+      grid-template-columns: 320px 1fr;
+      animation: fadeIn .5s ease;
+    }
 
+    /* UI blocks */
+    .panel {
+      padding: 14px; border-radius: 12px;
+      background: var(--card);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+    }
+    .card { padding: 12px; background: var(--card); border-radius: 10px; }
+
+    /* Inputs */
+    input, select {
+      width: 100%; padding: 12px;
+      background: var(--soft);
+      border-radius: 10px;
+      border: 1px solid rgba(0,0,0,0.1);
+      color: var(--text);
+      transition: .25s;
+    }
+    input:focus, select:focus {
+      border-color: var(--accent);
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      transition: .25s;
+    }
+
+    .primary { background: var(--accent); color: white; }
+    .primary:hover { opacity: .85; }
+
+    .ghost {
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+    }
+    .ghost:hover { background: var(--accent); color: white; }
+
+    .danger { background: var(--danger); color: white; }
+    .danger:hover { opacity: .85; }
+
+    /* Files */
+    #fileList {
+      margin-top: 14px;
+      display: flex; flex-direction: column;
+      gap: 10px; max-height: 66vh;
+      overflow: auto; padding-right: 6px;
+    }
+
+    .file-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px; background: var(--soft);
+      border-radius: 10px;
+      border: 1px solid rgba(0,0,0,0.06);
+      transition: .25s;
+    }
+    .file-row:hover { transform: scale(1.01); }
+
+    /* PDF Viewer */
+    #pdfOverlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.85);
+      align-items: center; justify-content: center;
+      z-index: 9999;
+    }
+
+    #pdfViewer {
+      width: 90%; height: 90%; background: white;
+      display: flex; flex-direction: column;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    #pdfFrame { flex: 1; border: 0; width: 100%; }
   </style>
 </head>
+
 <body>
 
 <div class="app">
   <header>
-    <div style="display:flex;gap:14px;align-items:center">
+    <div style="display:flex; gap:14px; align-items:center;">
       <div class="logo">EA</div>
       <div>
-        <div style="font-weight:700">EA Notes (Cloud)</div>
-        <div class="muted">For teachers & students</div>
+        <div style="font-weight:700">EA Notes Cloud</div>
+        <div class="muted">Safe storage for teacher & student notes</div>
       </div>
     </div>
-    <div style="display:flex;gap:12px">
+    <div style="display:flex; gap:12px;">
       <div id="userRole" class="muted">Not logged in</div>
       <button id="themeToggle" class="btn ghost">🌓</button>
     </div>
@@ -133,17 +193,20 @@
 
   <!-- LOGIN SCREEN -->
   <div id="loginArea">
-    <div id="loginCard" class="card" style="max-width:350px;margin:auto;">
-      <label>Username</label>
-      <input id="username" type="text" placeholder="Enter name">
-      <label style="margin-top:10px">Password</label>
-      <input id="password" type="password" placeholder="Enter password">
+    <div class="card" style="max-width:350px;margin:auto;">
+      <label>Email (teachers) or Name (students)</label>
+      <input id="username" type="text">
+
+      <label style="margin-top:10px">Password (teachers)</label>
+      <input id="password" type="password" placeholder="Leave empty if student">
+
       <button id="btnLogin" class="btn primary" style="margin-top:12px;width:100%">Login</button>
     </div>
   </div>
 
   <!-- MAIN AREA -->
   <main id="mainArea">
+    <!-- left -->
     <div class="panel">
       <div class="card">
         <label>Subject</label>
@@ -157,27 +220,27 @@
           <option>Psychology</option>
         </select>
 
-        <div id="uploadRow" style="display:none;margin-top:10px;gap:8px;align-items:center">
-          <label for="fileUpload" class="btn ghost" style="cursor:pointer">📤 Upload</label>
-          <input id="fileUpload" type="file" style="display:none">
+        <div id="uploadRow" style="display:none;margin-top:10px;gap:8px;align-items:center;">
+          <label for="fileUpload" class="btn ghost" style="cursor:pointer">📤 Upload PDF</label>
+          <input id="fileUpload" type="file" accept="application/pdf" style="display:none">
           <button id="btnLogout" class="btn danger">Logout</button>
         </div>
       </div>
     </div>
 
-    <!-- RIGHT SIDE -->
+    <!-- right -->
     <div class="panel">
       <div style="display:flex;gap:12px;align-items:center;">
         <input id="searchInput" type="search" placeholder="Search files..." style="flex:1">
         <button id="btnRefresh" class="btn ghost">Refresh</button>
       </div>
 
-      <div id="fileList" style="margin-top:14px"></div>
+      <div id="fileList"></div>
     </div>
   </main>
 </div>
 
-<!-- PDF VIEWER -->
+<!-- PDF preview -->
 <div id="pdfOverlay">
   <div id="pdfViewer">
     <div style="padding:10px;display:flex;justify-content:space-between;align-items:center;background:var(--soft)">
@@ -188,225 +251,7 @@
   </div>
 </div>
 
-<script>
-/* CLEAN FULL JS INSERTED (fixed template literals) */
-
-/***************************************************
-  FIREBASE INIT
-***************************************************/
-const firebaseConfig = {
-  apiKey:"AIzaSyAnUvU6tCpnO9oD4wdXbLS1o7jWpQuNPzE",
-  authDomain:"army-6b712.firebaseapp.com",
-  projectId:"army-6b712",
-  storageBucket:"army-6b712.appspot.com",
-  messagingSenderId:"468802966776",
-  appId:"1:468802966776:web:57cc6f23da92b6f3f7d70d"
-};
-firebase.initializeApp(firebaseConfig);
-
-const auth = firebase.auth();
-const db = firebase.firestore();
-const storage = firebase.storage();
-
-/***************************************************
-  DOM ELEMENTS
-***************************************************/
-const usernameInput = document.getElementById("username");
-const passwordInput = document.getElementById("password");
-const btnLogin = document.getElementById("btnLogin");
-const btnLogout = document.getElementById("btnLogout");
-
-const loginArea = document.getElementById("loginArea");
-const mainArea = document.getElementById("mainArea");
-const uploadRow = document.getElementById("uploadRow");
-const userRole = document.getElementById("userRole");
-
-const fileUpload = document.getElementById("fileUpload");
-const fileList = document.getElementById("fileList");
-const folderSelect = document.getElementById("folderSelect");
-const searchInput = document.getElementById("searchInput");
-const btnRefresh = document.getElementById("btnRefresh");
-
-const pdfOverlay = document.getElementById("pdfOverlay");
-const pdfFrame = document.getElementById("pdfFrame");
-const pdfName = document.getElementById("pdfName");
-const closePdf = document.getElementById("closePdf");
-
-/***************************************************
-  LOGIN LOGIC
-***************************************************/
-let currentRole = null;
-const TEACHER_PASS = "@teacher123";
-const STUDENT_PASS = "@armyamanu";
-
-btnLogin.addEventListener("click", async () => {
-  console.log("LOGIN CLICKED");
-
-  const pass = passwordInput.value.trim();
-  const name = usernameInput.value.trim();
-
-  if (pass === TEACHER_PASS) {
-    currentRole = "teacher";
-  } else if (pass === STUDENT_PASS) {
-    if (!name) return alert("Students must enter a name.");
-    currentRole = "student";
-  } else {
-    return alert("Incorrect password");
-  }
-
-  userRole.textContent = currentRole;
-  loginArea.style.display = "none";
-  mainArea.style.display = "grid";
-  uploadRow.style.display = currentRole === "teacher" ? "flex" : "none";
-
-  const user = await auth.signInAnonymously();
-  await db.collection("users").doc(user.user.uid).set(
-    { name, role: currentRole },
-    { merge: true }
-  );
-
-  loadFiles();
-});
-
-/***************************************************
-  LOGOUT
-***************************************************/
-btnLogout.addEventListener("click", () => {
-  auth.signOut();
-  loginArea.style.display = "block";
-  mainArea.style.display = "none";
-  usernameInput.value = "";
-  passwordInput.value = "";
-  userRole.textContent = "Not logged in";
-});
-
-/***************************************************
-  LOAD FILES
-***************************************************/
-let filesCache = [];
-async function loadFiles() {
-  const subject = folderSelect.value;
-
-  fileList.innerHTML = "<div class='muted'>Loading...</div>";
-
-  const snap = await db
-    .collection("files")
-    .where("subject", "==", subject)
-    .orderBy("time", "desc")
-    .get();
-
-  filesCache = [];
-  snap.forEach(doc => filesCache.push({ ...doc.data(), id: doc.id }));
-
-  renderFiles();
-}
-
-/***************************************************
-  RENDER FILES
-***************************************************/
-function renderFiles() {
-  const q = searchInput.value.toLowerCase();
-
-  const filtered = filesCache.filter(f =>
-    f.name.toLowerCase().includes(q)
-  );
-
-  if (filtered.length === 0) {
-    fileList.innerHTML = "<div class='muted'>No files found.</div>";
-    return;
-  }
-
-  let output = "";
-
-  filtered.forEach(f => {
-    output += `
-      <div class="file-row">
-        <div>
-          <div style=\"font-weight:700\">${f.name}</div>
-          <div class=\"muted\">${(f.size / 1024).toFixed(1)} KB</div>
-        </div>
-        <div style=\"display:flex;gap:6px\">`;
-
-    output += `<button class=\"btn primary\" onclick=\"previewPDF('${f.url}','${f.name}')\">Preview</button>`;
-    output += `<a class=\"btn ghost\" href=\"${f.url}\" target=\"_blank\">Open</a>`;
-
-    if (currentRole === "teacher") {
-      output += `<button class=\"btn danger\" onclick=\"deleteFile('${f.id}','${f.url}')\">Delete</button>`;
-    }
-
-    output += `</div></div>`;
-  });
-
-  fileList.innerHTML = output;
-}
-
-/***************************************************
-  PDF PREVIEW
-***************************************************/
-function previewPDF(url, name) {
-  pdfFrame.src = url;
-  pdfName.textContent = name;
-  pdfOverlay.style.display = "flex";
-}
-
-closePdf.addEventListener("click", () => {
-  pdfOverlay.style.display = "none";
-  pdfFrame.src = "";
-});
-
-/***************************************************
-  UPLOAD FILE (Teacher)
-***************************************************/
-fileUpload.addEventListener("change", async e => {
-  if (currentRole !== "teacher") return alert("Teachers only");
-
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const subject = folderSelect.value;
-  const path = `files/${subject}/${Date.now()}_${file.name}`;
-  const ref = storage.ref().child(path);
-
-  await ref.put(file);
-  const url = await ref.getDownloadURL();
-
-  await db.collection("files").add({
-    subject,
-    name: file.name,
-    size: file.size,
-    url,
-    time: Date.now()
-  });
-
-  loadFiles();
-});
-
-/***************************************************
-  DELETE FILE
-***************************************************/
-async function deleteFile(id, url) {
-  if (!confirm("Delete file?")) return;
-
-  await db.collection("files").doc(id).delete();
-
-  const path = decodeURIComponent(url.split("/o/")[1].split("?")[0]);
-  await storage.ref().child(path).delete();
-
-  loadFiles();
-}
-
-/***************************************************
-  EVENTS
-***************************************************/
-searchInput.addEventListener("input", renderFiles);
-folderSelect.addEventListener("change", loadFiles);
-btnRefresh.addEventListener("click", loadFiles);
-
-document.getElementById("themeToggle").onclick = () => {
-  document.body.classList.toggle("dark");
-};
-
-</script>
+<script src="script.js"></script>
 
 </body>
 </html>
