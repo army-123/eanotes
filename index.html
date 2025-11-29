@@ -1,9 +1,10 @@
+Amanuu, [11/29/2025 7:21 AM]
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>EA Notes — Cloud Version (Perfect)</title>
+  <title>EA Notes — Cloud Version</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 
@@ -42,6 +43,7 @@
   </style>
 </head>
 <body>
+
 <div class="app">
   <header>
     <div style="display:flex;gap:10px;align-items:center">
@@ -55,7 +57,7 @@
   </header>
 
   <main>
-    <!-- LOGIN CARD -->
+    <!-- LOGIN -->
     <div id="loginCard" class="card">
       <label>Username</label>
       <input id="username" type="text" placeholder="Your name" />
@@ -69,7 +71,7 @@
       </div>
     </div>
 
-    <!-- APP CARD -->
+    <!-- APP -->
     <div id="appCard" class="card" style="display:none">
       <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px">
         <select id="folderSelect" onchange="loadFiles()">
@@ -82,7 +84,6 @@
           <option>Psychology</option>
         </select>
 
-        <!-- CLEAN UPLOAD BUTTON -->
         <div id="uploadSection" style="display:none;">
           <label for="fileUpload" class="btn ghost" style="padding:8px 14px;cursor:pointer;">📤 Upload</label>
           <input id="fileUpload" type="file" style="display:none" />
@@ -99,21 +100,27 @@
   </main>
 </div>
 
-<!-- Firebase Scripts -->
+<!-- Firebase COMPAT JS -->
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.
+
+Amanuu, [11/29/2025 7:21 AM]
+com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
 
 <script>
-// 🔥 INSERT YOUR FIREBASE CONFIG HERE
+// ---------------------
+// REAL FIREBASE CONFIG
+// ---------------------
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "",
-  appId: ""
+  apiKey: "AIzaSyAnUvU6tCpnO9oD4wdXbLS1o7jWpQuNPzE",
+  authDomain: "army-6b712.firebaseapp.com",
+  projectId: "army-6b712",
+  storageBucket: "army-6b712.firebasestorage.app",
+  messagingSenderId: "468802966776",
+  appId: "1:468802966776:web:57cc6f23da92b6f3f7d70d",
+  measurementId: "G-HLGJB2NRRP"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -123,15 +130,16 @@ const storage = firebase.storage();
 
 const TEACHER_PASS = "@teacher123";
 const STUDENT_PASS = "@armyamanu";
-
 let currentUser = null;
 let currentRole = null;
 
+// ---------------------
+// LOGIN
+// ---------------------
 function appLogin(){
   const name = username.value.trim();
   const pass = password.value.trim();
 
-  // Require name for students
   if(pass === STUDENT_PASS && name === ""){
     alert("Students must enter a name.");
     return;
@@ -148,23 +156,58 @@ function appLogin(){
     return db.collection("users").doc(res.user.uid).set({name,role:currentRole},{merge:true});
   }).then(()=>{
     hideLoader();
-
     loginCard.style.display="none";
     appCard.style.display="block";
     userRole.textContent=currentRole;
     uploadSection.style.display = (currentRole==="teacher") ? "block" : "none";
-
     loadFiles();
+    initTelegram();
   }).catch(err=>{
     hideLoader();
     alert("Login failed: " + err.message);
   });
 }
-  });
-}
 
 function appLogout(){ location.reload(); }
 
+// ---------------------
+// LOAD FILES
+// ---------------------
+async function loadFiles(){
+  const subject = folderSelect.value;
+  const list = document.getElementById("fileList");
+
+  list.innerHTML = "<div style='color:#777'>Loading...</div>";
+
+  const snap = await db.collection("files")
+    .where("subject","==",subject)
+    .orderBy("time","desc")
+    .get();
+
+  if(snap.empty){ list.innerHTML = "<div style='color:#777'>No files added.</div>"; return; }
+
+  list.innerHTML = "";
+
+  snap.forEach(doc=>{
+    const f = doc.data();
+
+    list.innerHTML += `
+      <div class='file-row'>
+        <div>
+          <div style='font-weight:600'>${f.name}</div>
+          <div style='font-size:12px;color:#777'>${(f.size/1024).toFixed(1)} KB</div>
+        </div>
+        <div class='actions'>
+          <button class='view-btn' onclick="openPdf('${f.url}')">View</button>
+          ${currentRole==="teacher" ? <button class='btn ghost' onclick="deleteFile('${doc.id}','${f.url}')">Delete</button> : ""}
+        </div>
+      </div>`;
+  });
+}
+
+// ---------------------
+// UPLOAD
+// ---------------------
 fileUpload.onchange = (e)=>{
   if(currentRole!=="teacher") return alert("Only teachers can upload.");
 
@@ -191,33 +234,9 @@ fileUpload.onchange = (e)=>{
   );
 };
 
-async function loadFiles(){
-  const subject = folderSelect.value;
-  const list = document.getElementById("fileList");
-  list.innerHTML = "<div style='color:#777'>Loading...</div>";
-
-  const snap = await db.collection("files").where("subject","==",subject).orderBy("time","desc").get();
-
-  if(snap.empty){ list.innerHTML = "<div style='color:#777'>No files added.</div>"; return; }
-
-  list.innerHTML = "";
-
-  snap.forEach(doc=>{
-    const f = doc.data();
-    list.innerHTML += `
-      <div class='file-row'>
-        <div>
-          <div style='font-weight:600'>${f.name}</div>
-          <div style='font-size:12px;color:#777'>${(f.size/1024).toFixed(1)} KB</div>
-        </div>
-        <div class='actions'>
-          <button class='view-btn' onclick="window.open('${f.url}','_blank')">View</button>
-          ${currentRole==="teacher" ? `<button class='btn ghost' onclick="deleteFile('${doc.id}','${f.url}')">Delete</button>` : ""}
-        </div>
-      </div>`;
-  });
-}
-
+// ---------------------
+// DELETE FILE
+// ---------------------
 async function deleteFile(id,url){
   if(!confirm("Delete file?")) return;
 
@@ -229,12 +248,52 @@ async function deleteFile(id,url){
   loadFiles();
 }
 
+// ---------------------
+// THEME
+// ---------------------
 function toggleDark(){
-  document.body.style.background = document.body.style.background.includes("0f17") ?
+  document.body.style.
+
+Amanuu, [11/29/2025 7:21 AM]
+background = document.body.style.background.includes("0f17") ?
     "linear-gradient(180deg,#e6eefc,#f7fbff)" : "linear-gradient(180deg,#0f1724,#0b233f)";
+}
+
+// ---------------------
+// Loader
+// ---------------------
+function showLoader(){ document.getElementById('loaderOverlay').style.display = 'flex'; }
+function hideLoader(){ document.getElementById('loaderOverlay').style.display = 'none'; }
+
+// ---------------------
+// TELEGRAM MINI APP
+// ---------------------
+function initTelegram(){
+  if(!window.Telegram || !window.Telegram.WebApp){
+    console.log("Not inside Telegram");
+    return;
+  }
+
+  const tg = window.Telegram.WebApp;
+
+  try { tg.expand(); } catch(e){}
+
+  if(tg.MainButton){
+    tg.MainButton.setText("Upload File");
+    currentRole==="teacher" ? tg.MainButton.show() : tg.MainButton.hide();
+  }
+
+  tg.onEvent('backButtonClicked', ()=>{
+    if(pdfOverlay.style.display==="flex"){
+      pdfClose.click();
+    } else {
+      tg.close();
+    }
+  });
 }
 </script>
 
+<!-- Loader -->
 <div id="loaderOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(3px);z-index:999;align-items:center;justify-content:center;">
   <div style="width:60px;height:60px;border:6px solid #fff;border-top-color:#0b69ff;border-radius:50%;animation:spin 0.9s linear infinite"></div>
 </div>
@@ -243,9 +302,63 @@ function toggleDark(){
 @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
 </style>
 
+<!-- 📄 PDF VIEWER -->
+<div id="pdfOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:2000;align-items:center;justify-content:center;">
+  <div style="width:90%;max-width:900px;height:90%;background:#fff;border-radius:10px;overflow:hidden;display:flex;flex-direction:column;">
+    <div style="padding:8px 12px;background:#f3f5f7;display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-weight:600">PDF Viewer</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="pdfPrev" class="btn ghost" style="padding:6px 10px">Prev</button>
+        <button id="pdfNext" class="btn ghost" style="padding:6px 10px">Next</button>
+        <button id="pdfClose" class="btn ghost" style="padding:6px 10px">Close</button>
+      </div>
+    </div>
+
+    <div style="flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;padding:12px;background:#eee">
+      <canvas id="pdfCanvas" style="max-width:100%;box-shadow:0 8px 24px rgba(0,0,0,0.12)"></canvas>
+    </div>
+
+    <div style="padding:8px 12px;background:#fff;border-top:1px solid #eee;text-align:right;font-size:13px;color:#444">
+      <span id="pdfPageInfo">Page 0 / 0</span>
+    </div>
+  </div>
+</div>
+
+<script src="https://mozilla.github.io/pdf.js/build/pdf.js"></script>
 <script>
-function showLoader(){ document.getElementById('loaderOverlay').style.display = 'flex'; }
-function hideLoader(){ document.getElementById('loaderOverlay').style.display = 'none'; }
+  const pdfOverlay = document.getElementById('pdfOverlay');
+  const pdfCanvas = document.getElementById('pdfCanvas');
+  const pdfCtx = pdfCanvas.getContext('2d');
+  const pdfPageInfo = document.getElementById('pdfPageInfo');
+  let pdfDoc = null, currentPage = 1, totalPages = 0, pdfScale = 1.2;
+
+  async function openPdf(url){
+    pdfOverlay.style.display='flex';
+    const loadingTask = pdfjsLib.getDocument(url);
+    pdfDoc = await loadingTask.promise;
+    totalPages = pdfDoc.numPages;
+    currentPage = 1;
+    renderPage(currentPage);
+  }
+
+  async function renderPage(num){
+    const page = await pdfDoc.getPage(num);
+    const viewport = page.getViewport({ scale: pdfScale });
+
+    pdfCanvas.width = viewport.width;
+    pdfCanvas.height = viewport.height;
+
+    await page.render({
+      canvasContext: pdfCtx,
+      viewport
+    }).promise;
+
+    pdfPageInfo.textContent=`Page ${num} / ${totalPages}`;
+  }
+
+  pdfPrev.onclick=()=>{ if(currentPage>1){ currentPage--; renderPage(currentPage); } };
+  pdfNext.onclick=()=>{ if(currentPage<totalPages){ currentPage++; renderPage(currentPage); } };
+  pdfClose.onclick=()=>{ pdfOverlay.style.display='none'; pdfDoc=null; };
 </script>
 
 </body>
