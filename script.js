@@ -1,19 +1,20 @@
 /******************************
- *  EA NOTES CLOUD - FULL JS
- *  FAST UPLOAD VERSION
+ *  EA NOTES CLOUD - FULL WORKING SCRIPT
+ *  With fast upload + correct Firebase config
  ******************************/
 
-// Your Firebase configuration
+// Firebase config (YOUR REAL CONFIG)
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MSG",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyAnUvU6tCpnO9oD4wdXbLS1o7jWpQuNPzE",
+  authDomain: "army-6b712.firebaseapp.com",
+  projectId: "army-6b712",
+  storageBucket: "army-6b712.appspot.com",
+  messagingSenderId: "468802966776",
+  appId: "1:468802966776:web:57cc6f23da92b6f3f7d70d",
+  measurementId: "G-HLGJB2NRRP"
 };
 
-// Initialize Firebase
+// Initialize Firebase (V8 format)
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
