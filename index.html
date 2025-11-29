@@ -1,181 +1,235 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EA Notes Cloud - Login</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EA Notes Cloud – Login</title>
 
-    <style>
-        body {
-            margin: 0;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: linear-gradient(135deg, #111, #222);
-            font-family: "Poppins", sans-serif;
-            overflow: hidden;
-        }
+<style>
+:root {
+    --bg: #111;
+    --card: rgba(255,255,255,0.06);
+    --text: #fff;
+    --input-bg: rgba(255,255,255,0.12);
+    --button: #4a90e2;
+    --button-hover: #357abd;
+}
 
-        .card {
-            width: 350px;
-            padding: 30px;
-            border-radius: 20px;
-            backdrop-filter: blur(20px);
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 0 40px rgba(0,0,0,0.4);
-            text-align: center;
-            color: white;
-            animation: fadeIn 1s ease;
-        }
+/* Light Mode */
+.light {
+    --bg: #f7f7f7;
+    --card: rgba(0,0,0,0.05);
+    --text: #111;
+    --input-bg: rgba(0,0,0,0.08);
+    --button: #333;
+    --button-hover: #000;
+}
 
-        .card h2 {
-            margin-bottom: 5px;
-        }
+body {
+    margin: 0;
+    height: 100vh;
+    background: var(--bg);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: "Poppins", sans-serif;
+    transition: 0.3s;
+}
 
-        .card p {
-            color: #ccc;
-            margin-top: -5px;
-        }
+.card {
+    width: 340px;
+    padding: 28px;
+    border-radius: 16px;
+    background: var(--card);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 0 20px rgba(0,0,0,0.4);
+    color: var(--text);
+    animation: fadeIn 0.8s ease;
+}
 
-        input, select {
-            width: 90%;
-            padding: 12px;
-            margin: 8px 0;
-            border-radius: 10px;
-            border: none;
-            background: rgba(255,255,255,0.1);
-            color: white;
-            outline: none;
-        }
+.card h2 {
+    margin-bottom: 5px;
+}
 
-        button {
-            width: 95%;
-            padding: 12px;
-            margin-top: 10px;
-            background: #4a90e2;
-            border: none;
-            border-radius: 10px;
-            color: white;
-            font-size: 16px;
-            cursor: pointer;
-        }
+select, input {
+    width: 94%;
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 10px;
+    border: none;
+    outline: none;
+    background: var(--input-bg);
+    color: var(--text);
+}
 
-        button:hover {
-            background: #357abd;
-        }
+button {
+    margin-top: 10px;
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    background: var(--button);
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+}
 
-        /* LOADING OVERLAY */
-        #loading {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            backdrop-filter: blur(5px);
-            background: rgba(0,0,0,0.6);
-            display: none;
-            justify-content: center;
-            align-items: center;
-        }
+button:hover {
+    background: var(--button-hover);
+}
 
-        .spinner {
-            width: 60px;
-            height: 60px;
-            border: 6px solid rgba(255,255,255,0.3);
-            border-top: 6px solid #4a90e2;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
+.theme-toggle {
+    text-align: center;
+    margin-bottom: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text);
+    opacity: 0.8;
+}
 
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        @keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
-    </style>
+#msg {
+    margin-top: 10px;
+    color: #ff5555;
+    min-height: 20px;
+    font-size: 14px;
+}
+
+/* Loading Overlay */
+#loading {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(6px);
+    background: rgba(0,0,0,0.5);
+}
+
+.spinner {
+    width: 60px;
+    height: 60px;
+    border: 6px solid rgba(255,255,255,0.3);
+    border-top: 6px solid #4a90e2;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+ 100% { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+ from {opacity:0;} to {opacity:1;}
+}
+</style>
 </head>
 <body>
 
+<!-- LOADING -->
 <div id="loading"><div class="spinner"></div></div>
 
 <div class="card">
+    <div class="theme-toggle" onclick="toggleTheme()">🌙 / ☀️ Theme</div>
+
     <h2>EA Notes Cloud</h2>
     <p>Login to continue</p>
 
-    <select id="role">
+    <select id="role" onchange="switchRole()">
         <option value="student">Student</option>
         <option value="teacher">Teacher</option>
     </select>
 
-    <input type="text" id="username" placeholder="Username / Email">
+    <input type="text" id="username" placeholder="Username">
     <input type="password" id="password" placeholder="Password">
 
     <button onclick="login()">Login</button>
 
-    <p id="msg" style="margin-top:10px; color:#ff4444;"></p>
+    <div id="msg"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-    const supabaseUrl = "YOUR_SUPABASE_URL";
-    const supabaseKey = "YOUR_SUPABASE_ANON_KEY";
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+const supabase = supabase.createClient(
+    "https://hlstgluwamsuuqlctdzk.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhsc3RnbHV3YW1zdXVxbGN0ZHprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyNzMwMzQsImV4cCI6MjA3OTg0OTAzNH0.KUPx3pzrcd3H5aEx2B7mFosWNUVOEzXDD5gL-TmyawQ"
+);
 
-    const loader = document.getElementById("loading");
-    const msg = document.getElementById("msg");
+const loader = document.getElementById("loading");
+const msg = document.getElementById("msg");
 
-    async function login() {
-        msg.innerText = "";
-        loader.style.display = "flex";
+function switchRole() {
+    const role = document.getElementById("role").value;
+    const user = document.getElementById("username");
 
-        const role = document.getElementById("role").value;
-        const username = document.getElementById("username").value.trim();
-        const password = document.getElementById("password").value.trim();
+    if (role === "teacher") {
+        user.placeholder = "Email";
+    } else {
+        user.placeholder = "Student Name";
+    }
+}
 
-        if (!username || !password) {
+function toggleTheme() {
+    document.body.classList.toggle("light");
+}
+
+document.addEventListener("keyup", e => {
+    if (e.key === "Enter") login();
+});
+
+async function login() {
+    msg.textContent = "";
+    loader.style.display = "flex";
+
+    const role = document.getElementById("role").value;
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value.trim();
+
+    if (!username || !password) {
+        loader.style.display = "none";
+        msg.textContent = "Please fill all fields.";
+        return;
+    }
+
+    if (role === "teacher") {
+        // TEACHER LOGIN
+        const { error } = await supabase.auth.signInWithPassword({
+            email: username,
+            password: password
+        });
+
+        if (error) {
             loader.style.display = "none";
-            msg.innerText = "Please fill all fields.";
+            msg.textContent = error.message;
             return;
         }
 
-        if (role === "teacher") {
-            // TEACHER LOGIN (Email + Password)
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email: username,
-                password: password
-            });
-
-            if (error) {
-                loader.style.display = "none";
-                msg.innerText = error.message;
-                return;
-            }
-
-            window.location.href = "/teacher/teacher.html";
-        }
-
-        else {
-            // STUDENT LOGIN (username + common password)
-            if (password !== "@armyamanu") {
-                loader.style.display = "none";
-                msg.innerText = "Wrong student password!";
-                return;
-            }
-
-            const { data, error } = await supabase
-                .from("students")
-                .select("*")
-                .eq("name", username);
-
-            if (error || data.length === 0) {
-                loader.style.display = "none";
-                msg.innerText = "Student not found.";
-                return;
-            }
-
-            window.location.href = "/student/student.html";
-        }
+        window.location.href = "teacher/teacher.html";
     }
+
+    else {
+        // STUDENT LOGIN
+        if (password !== "@armyamanu") {
+            loader.style.display = "none";
+            msg.textContent = "Incorrect student password!";
+            return;
+        }
+
+        const { data, error } = await supabase
+            .from("students")
+            .select("*")
+            .eq("name", username);
+
+        if (error || data.length === 0) {
+            loader.style.display = "none";
+            msg.textContent = "Student not found!";
+            return;
+        }
+
+        window.location.href = "student/student.html";
+    }
+}
 </script>
 
 </body>
