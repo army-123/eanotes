@@ -5,51 +5,122 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>EA Notes Cloud — Liquid</title>
 
+<!-- Supabase client (loaded for script.js to use) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
 <style>
-  /* YOUR ORIGINAL CSS UNTOUCHED EXCEPT VIEWER IMPROVEMENTS */
-
-  /* Full-screen document viewer */
-  #docModal {
-    display:none;
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,0.85);
-    z-index:9999;
-    display:flex;
-    align-items:center;
-    justify-content:center;
+  /* ---------- Liquid theme colors ---------- */
+  :root{
+    --bg-1: #052a2b;
+    --bg-2: #063b3c;
+    --glass: rgba(255,255,255,0.04);
+    --muted: rgba(230,240,245,0.6);
+    --accent-1: #3dd5c0;
+    --accent-2: #2aa4f4;
+    --danger: #ff6b6b;
+    --card-radius: 14px;
   }
 
-  #docBox {
-    width:100%;
-    height:100%;
-    background:#000;
-    display:flex;
-    flex-direction:column;
+  html,body{ height:100%; margin:0; font-family:Inter,system-ui,Arial; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; background: linear-gradient(135deg,var(--bg-1),var(--bg-2)); color: #e9f6f5; }
+
+  /* center container */
+  .wrap { min-height:100%; display:flex; align-items:center; justify-content:center; padding:28px; box-sizing:border-box; }
+
+  /* card */
+  .card {
+    width:980px; max-width:100%; background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    border-radius: var(--card-radius); padding:20px; box-shadow: 0 10px 40px rgba(2,8,10,0.6);
+    backdrop-filter: blur(6px);
+    overflow: hidden;
   }
 
-  #docTopBar {
-    padding:12px 16px;
-    background:#111;
-    color:white;
-    font-size:17px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    border-bottom:1px solid #222;
+  .header { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px; }
+  h1 { margin:0; font-size:20px; letter-spacing:0.2px; }
+  .sub { color:var(--muted); font-size:13px; margin-top:4px; }
+
+  /* layout: login + dashboard stacked (we hide/show) */
+  .section { margin-top:14px; }
+
+  /* login box */
+  #loginBox { display:block; animation:fadeUp .35s ease both; }
+  label { display:block; margin-top:12px; color:var(--muted); font-size:13px; }
+  input[type="text"], input[type="password"] {
+    width:100%; padding:12px 14px; margin-top:8px; border-radius:10px; border:1px solid rgba(255,255,255,0.04);
+    background: rgba(255,255,255,0.02); color:inherit; outline:none; box-sizing:border-box;
+    transition: transform .08s ease, box-shadow .12s ease;
+  }
+  input:focus { box-shadow: 0 6px 20px rgba(32,160,155,0.08); transform: translateY(-1px); }
+
+  .btn {
+    display:inline-flex; align-items:center; justify-content:center;
+    padding:12px 14px; border-radius:10px; border:0; cursor:pointer; font-weight:700;
   }
 
-  #docFrame {
-    border:0;
-    width:100%;
-    height:100%;
-    flex:1;
-    background:#000;
+  .btn-primary {
+    background: linear-gradient(90deg,var(--accent-1),var(--accent-2));
+    color:#04292b; box-shadow: 0 8px 30px rgba(45,200,180,0.12);
+  }
+
+  .btn-ghost {
+    background: transparent; color:var(--accent-1); border:1px solid rgba(255,255,255,0.06); font-weight:600;
+  }
+
+  .muted-small { color:var(--muted); font-size:13px; margin-top:10px; min-height:18px; }
+
+  /* Dashboard */
+  #dashboard { display:none; animation:fadeUp .35s ease both; }
+  .topbar { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+  .roleTag { padding:8px 10px; border-radius:999px; background: rgba(255,255,255,0.02); color:var(--muted); font-weight:700; }
+  .controls { display:flex; gap:10px; align-items:center; margin-top:12px; flex-wrap:wrap; }
+
+  select { padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background: rgba(255,255,255,0.02); color:inherit; }
+
+  /* file list */
+  .file-list { margin-top:14px; display:flex; flex-direction:column; gap:10px; }
+  .file-row {
+    display:flex; justify-content:space-between; align-items:center; gap:12px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));
+    border-radius:10px; padding:12px; transform-origin:center; transition: transform .16s ease, box-shadow .16s ease;
+  }
+  .file-row:hover { transform: translateY(-4px); box-shadow: 0 10px 40px rgba(3,22,24,0.35); }
+
+  .file-meta { min-width:0; overflow:hidden; }
+  .file-title { font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .file-sub { color:var(--muted); font-size:13px; margin-top:6px; }
+
+  .file-actions { display:flex; gap:8px; align-items:center; }
+
+  .btn-view { background:transparent; color:var(--accent-2); border:1px solid rgba(255,255,255,0.03); padding:8px 10px; border-radius:8px; }
+  .btn-delete { background:var(--danger); color:white; padding:8px 10px; border-radius:8px; border:0; }
+
+  /* upload placeholder row (uploading) */
+  .uploading { opacity:0.95; }
+
+  .progress {
+    height:8px; background: rgba(255,255,255,0.06); border-radius:8px; overflow:hidden; margin-top:8px;
+  }
+  .progress > b { display:block; height:100%; width:0%; background: linear-gradient(90deg,var(--accent-1),var(--accent-2)); transition: width .25s ease; }
+
+  /* modal / viewer */
+  #pdfModal { display:none; position:fixed; inset:0; z-index:999; background:linear-gradient(rgba(2,6,8,0.6), rgba(2,6,8,0.85)); align-items:center; justify-content:center; }
+  /* SMALL CHANGE: make viewer take full screen for better reading (no other layout changes) */
+  #pdfBox { width:100%; height:100%; background:white; border-radius:0; overflow:hidden; display:flex; flex-direction:column; }
+
+  #pdfFrame { border:0; flex:1; width:100%; height:100%; }
+
+  /* small spinner for inline use */
+  .spinner-inline{ display:inline-block; width:16px; height:16px; border-radius:50%; border:2px solid rgba(255,255,255,0.15); border-top-color:white; animation: spin .8s linear infinite; margin-left:8px; vertical-align:middle; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  /* animations */
+  @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+
+  /* responsive */
+  @media (max-width:940px){
+    .card { padding:16px; width:100% }
+    .controls{ flex-direction:column; align-items:stretch; }
   }
 </style>
-
 </head>
 <body>
   <div class="wrap">
@@ -61,16 +132,18 @@
           <h1>EA Notes Cloud</h1>
           <div class="sub">Liquid theme — neat, smooth and fast</div>
         </div>
-        <div id="headerRight" style="display:flex;align-items:center;gap:8px"></div>
+        <div id="headerRight" style="display:flex;align-items:center;gap:8px">
+          <!-- will show roleText inside dashboard only -->
+        </div>
       </div>
 
       <!-- LOGIN -->
       <div id="loginBox" class="section" aria-live="polite">
         <label for="loginName">Username / Email</label>
-        <input id="loginName" type="text" autocomplete="off">
+        <input id="loginName" type="text" autocomplete="off" placeholder="Student name or teacher email">
 
         <label for="loginPassword">Password</label>
-        <input id="loginPassword" type="password">
+        <input id="loginPassword" type="password" autocomplete="new-password" placeholder="Enter password">
 
         <button id="btnLogin" class="btn btn-primary" style="margin-top:14px;">
           <span id="btnLoginText">Login</span>
@@ -80,7 +153,7 @@
         <div id="loginFeedback" class="muted-small"></div>
       </div>
 
-      <!-- DASHBOARD -->
+      <!-- DASHBOARD (hidden until login) -->
       <div id="dashboard" class="section" aria-hidden="true">
         <div class="topbar">
           <div>
@@ -89,36 +162,27 @@
           </div>
 
           <div class="controls" id="controlsRow">
-            <select id="subjectSelect">
-              <option>Anatomy</option><option>History</option><option>Geography</option>
-              <option>Psychology</option><option>Mathematics</option>
+            <select id="subjectSelect" aria-label="subject">
+              <option>Anatomy</option><option>History</option><option>Geography</option><option>Psychology</option><option>Mathematics</option>
             </select>
 
-            <!-- upload button hidden for students in script.js -->
-            <button id="uploadBtn" class="btn btn-primary">Upload</button>
-            <input id="realFileInput" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx" style="display:none">
+            <button id="uploadBtn" class="btn btn-primary">Upload PDF</button>
+            <input id="realFileInput" type="file" accept="application/pdf" style="display:none">
 
-            <button id="logoutBtn" class="btn btn-ghost">Logout</button>
+            <button id="logoutBtn" class="btn btn-ghost" style="border:1px solid rgba(255,255,255,0.06);">Logout</button>
           </div>
         </div>
 
-        <div class="file-list" id="fileList"></div>
+        <div class="file-list" id="fileList" aria-live="polite"></div>
       </div>
 
-    </div>
-  </div>
+    </div> <!-- card -->
+  </div> <!-- wrap -->
 
-  <!-- FULLSCREEN DOCUMENT VIEWER -->
-  <div id="docModal">
-    <div id="docBox">
-      <div id="docTopBar">
-        <span id="docTitle"></span>
-        <button id="closeDoc" class="btn btn-primary" style="padding:6px 12px;">Close</button>
-      </div>
-      <iframe id="docFrame"></iframe>
-    </div>
-  </div>
+  <!-- PDF modal -->
+  <div id="pdfModal"><div id="pdfBox"><div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #eee;"><div id="pdfTitle"></div><div><button id="closePdf" class="btn btn-primary" style="background:var(--accent-2);color:#04292b;">Close</button></div></div><iframe id="pdfFrame" allowfullscreen></iframe></div></div>
 
+  <!-- Logic (separate file recommended) -->
   <script src="script.js"></script>
 </body>
 </html>
