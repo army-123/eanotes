@@ -8,8 +8,8 @@
 <!-- Supabase client -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
-<!-- ✅ REQUIRED FOR DEVICE LOCK (FingerprintJS) -->
-<script src="https://openfpcdn.io/fingerprintjs/v3"></script>
+<!-- ✅ Correct FingerprintJS UMD build (this is the ONLY fix added) -->
+<script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
 
 <style>
   /* ---------- Liquid theme colors ---------- */
@@ -180,7 +180,7 @@
     </div>
   </div>
 
-  <!-- Runs after both Supabase & FingerprintJS loaded -->
+  <!-- MUST come last -->
   <script src="script.js"></script>
 </body>
 </html>
