@@ -26,21 +26,18 @@ async function getDeviceId() {
 async function handleDeviceLock(username) {
   const device = await getDeviceId();
 
-  // Fetch student row
   const { data: row, error } = await sb
     .from("students_devices")
     .select("*")
     .eq("username", username)
     .single();
 
-  // If row missing → block
   if (!row) {
     setFeedback("❌ You are not registered. Contact admin.", true);
     showLoginLoading(false);
     throw new Error("Not registered");
   }
 
-  // First login → save device
   if (!row.device_id) {
     await sb
       .from("students_devices")
@@ -49,14 +46,11 @@ async function handleDeviceLock(username) {
         last_login: new Date().toISOString(),
       })
       .eq("username", username);
-
     return;
   }
 
-  // Same device → allow
   if (row.device_id === device) return;
 
-  // Different device → block
   setFeedback("❌ This account already logged in on another device.", true);
   showLoginLoading(false);
   throw new Error("Device mismatch");
@@ -123,6 +117,33 @@ function showDashboard(show){
   headerRight.appendChild(themeButton);
 })();
 
+/* ======================================================
+   NEW SECTION: Dynamic Subjects (add/remove via admin)
+   ====================================================== */
+async function loadSubjectsDropdown() {
+  try {
+    const { data, error } = await sb
+      .from("subjects")
+      .select("*")
+      .order("name", { ascending: true });
+
+    if (error) throw error;
+
+    subjectSelect.innerHTML = "";
+
+    data.forEach(sub => {
+      const opt = document.createElement("option");
+      opt.value = sub.name;
+      opt.textContent = sub.name;
+      subjectSelect.appendChild(opt);
+    });
+
+    loadFiles(); // refresh files after subjects load
+  } catch (err) {
+    console.error("Subject load error:", err);
+  }
+}
+
 /* ---------- login logic ---------- */
 async function loginHandler(){
   setFeedback('');
@@ -137,21 +158,13 @@ async function loginHandler(){
   showLoginLoading(true);
   await new Promise(r=>setTimeout(r, 450));
 
-  /* ---------------------------------------------
-     TEACHER LOGIN (unchanged)
-     --------------------------------------------- */
   if(pw === '@teacher123'){
     saveUser({ role:'teacher', name });
     finishLogin('teacher', name);
     return;
   }
 
-  /* ---------------------------------------------
-     FIXED STUDENT LOGIN (RESTRICTED + DEVICE LOCK)
-     --------------------------------------------- */
   if (pw === '@armyamanu') {
-
-    // Check if student exists in DB
     const { data: studentRow, error: checkErr } = await sb
       .from("students_devices")
       .select("*")
@@ -166,16 +179,13 @@ async function loginHandler(){
 
     try {
       await handleDeviceLock(name);
-    } catch (err) {
-      return;
-    }
+    } catch (err) { return; }
 
     saveUser({ role:'student', name });
     finishLogin('student', name);
     return;
   }
 
-  /* wrong password */
   setFeedback('Incorrect password', true);
   showLoginLoading(false);
 }
@@ -183,7 +193,6 @@ async function loginHandler(){
 function finishLogin(role, name){
   roleTag.textContent = role === 'teacher' ? 'Teacher' : 'Student';
   welcomeText.textContent = role === 'teacher' ? `Welcome, Teacher` : `Welcome, ${escapeHtml(name)}`;
-  setFeedback('');
 
   if(role === 'teacher'){
     uploadBtn.style.display = 'inline-flex';
@@ -196,7 +205,8 @@ function finishLogin(role, name){
 
   localStorage.setItem('eanotes_user', JSON.stringify({ role, name }));
 
-  loadFiles();
+  /* NEW: load dynamic subjects instead of static subjects */
+  loadSubjectsDropdown();
 }
 
 btnLogin.addEventListener('click', loginHandler);
@@ -208,6 +218,7 @@ loginPassword.addEventListener('keyup', (e) => { if(e.key === 'Enter') loginHand
   if(!raw) return;
   try{
     const user = JSON.parse(raw);
+    showDashboard(true);
     finishLogin(user.role, user.name);
   }catch(e){}
 })();
@@ -329,7 +340,7 @@ function createUploadingRow(filename, subject){
 /* ---------- load files ---------- */
 async function loadFiles(){
   fileList.innerHTML = '<div class="muted">Loading files…</div>';
-  const subject = subjectSelect.value || 'Anatomy';
+  const subject = subjectSelect.value;
 
   try{
     const { data, error } =
