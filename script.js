@@ -9,6 +9,59 @@ const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 /* ---------- ONLY ONE FIX: use correct Supabase client ---------- */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
+/* ---------- DEVICE FINGERPRINT ---------- */
+let deviceId = null;
+const fpPromise = FingerprintJS.load();
+
+async function getDeviceId() {
+  const fp = await fpPromise;
+  const result = await fp.get();
+  deviceId = result.visitorId;
+  return deviceId;
+}
+
+/* ======================================
+   ONE DEVICE LOGIN PROTECTION (SAFE)
+   ====================================== */
+async function handleDeviceLock(username) {
+  const device = await getDeviceId();
+
+  // Fetch student row
+  const { data: row, error } = await sb
+    .from("students_devices")
+    .select("*")
+    .eq("username", username)
+    .single();
+
+  // If row missing → block
+  if (!row) {
+    setFeedback("❌ You are not registered. Contact admin.", true);
+    showLoginLoading(false);
+    throw new Error("Not registered");
+  }
+
+  // First login → save device
+  if (!row.device_id) {
+    await sb
+      .from("students_devices")
+      .update({
+        device_id: device,
+        last_login: new Date().toISOString(),
+      })
+      .eq("username", username);
+
+    return;
+  }
+
+  // Same device → allow
+  if (row.device_id === device) return;
+
+  // Different device → block
+  setFeedback("❌ This account already logged in on another device.", true);
+  showLoginLoading(false);
+  throw new Error("Device mismatch");
+}
+
 /* ---------- DOM ---------- */
 const loginBox = document.getElementById('loginBox');
 const loginName = document.getElementById('loginName');
@@ -84,18 +137,45 @@ async function loginHandler(){
   showLoginLoading(true);
   await new Promise(r=>setTimeout(r, 450));
 
-  if(pw === '@armyamanu'){
-    saveUser({ role:'student', name });
-    finishLogin('student', name);
-    return;
-  }
-
+  /* ---------------------------------------------
+     TEACHER LOGIN (unchanged)
+     --------------------------------------------- */
   if(pw === '@teacher123'){
     saveUser({ role:'teacher', name });
     finishLogin('teacher', name);
     return;
   }
 
+  /* ---------------------------------------------
+     FIXED STUDENT LOGIN (RESTRICTED + DEVICE LOCK)
+     --------------------------------------------- */
+  if (pw === '@armyamanu') {
+
+    // Check if student exists in DB
+    const { data: studentRow, error: checkErr } = await sb
+      .from("students_devices")
+      .select("*")
+      .eq("username", name)
+      .single();
+
+    if (checkErr || !studentRow) {
+      setFeedback("❌ You are not registered. Contact admin.", true);
+      showLoginLoading(false);
+      return;
+    }
+
+    try {
+      await handleDeviceLock(name);
+    } catch (err) {
+      return;
+    }
+
+    saveUser({ role:'student', name });
+    finishLogin('student', name);
+    return;
+  }
+
+  /* wrong password */
   setFeedback('Incorrect password', true);
   showLoginLoading(false);
 }
@@ -105,19 +185,11 @@ function finishLogin(role, name){
   welcomeText.textContent = role === 'teacher' ? `Welcome, Teacher` : `Welcome, ${escapeHtml(name)}`;
   setFeedback('');
 
-  /* ========= MINIMAL CHANGE HERE =========
-     Previously code toggled a 'hidden' class that doesn't exist.
-     That allowed the Upload button to remain visible to students.
-     Fix: explicitly hide the upload button for students and show for teachers.
-  */
   if(role === 'teacher'){
-    // show upload for teacher
     uploadBtn.style.display = 'inline-flex';
   } else {
-    // hide upload for student (prevent student upload UI)
     uploadBtn.style.display = 'none';
   }
-  /* ========= end minimal change ========= */
 
   showDashboard(true);
   showLoginLoading(false);
@@ -127,7 +199,6 @@ function finishLogin(role, name){
   loadFiles();
 }
 
-/* login events */
 btnLogin.addEventListener('click', loginHandler);
 loginPassword.addEventListener('keyup', (e) => { if(e.key === 'Enter') loginHandler(); });
 
@@ -149,7 +220,7 @@ logoutBtn.addEventListener('click', () => {
   showDashboard(false);
 });
 
-/* ---------- upload logic ---------- */
+/* ---------- upload logic (unchanged) ---------- */
 uploadBtn.addEventListener('click', () => {
   realFileInput.click();
 });
@@ -201,7 +272,6 @@ realFileInput.addEventListener('change', async (ev) => {
   }
 });
 
-/* create uploading row */
 function createUploadingRow(filename, subject){
   const row = document.createElement('div');
   row.className = 'file-row uploading';
@@ -313,19 +383,14 @@ async function loadFiles(){
 }
 
 /* ---------- PDF modal ---------- */
-/* MINIMAL CHANGE: use Google Docs Viewer for consistent full-screen rendering
-   This supports PDF, DOC/DOCX, PPT/PPTX and renders inside the iframe.
-*/
 function openPdf(url, name){
   pdfTitle.textContent = name || '';
-  // Use google docs viewer (works for pdf, doc, docx, ppt, pptx) and is embeddable
   const viewer = `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
   pdfFrame.src = viewer;
   pdfModal.style.display = 'flex';
 }
 closePdf.addEventListener('click', ()=> { pdfModal.style.display = 'none'; pdfFrame.src = ''; });
 
-/* ---------- subject change reload ---------- */
 subjectSelect.addEventListener('change', loadFiles);
 
 /* ---------- helpers ---------- */
