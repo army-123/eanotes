@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Admin Panel</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Supabase client -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+  background: #f1f1f1;
+}
+.box {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  max-width: 400px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+button {
+  margin-top: 10px;
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  cursor: pointer;
+}
+input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+}
+h2 {
+  margin-bottom: 5px;
+}
+</style>
+</head>
+<body>
+
+<h1>Admin Panel</h1>
+
+<div class="box">
+  <h2>Add Student</h2>
+  <input id="addName" type="text" placeholder="Enter student username">
+  <button onclick="addStudent()">Add Student</button>
+</div>
+
+<div class="box">
+  <h2>Reset Student Device</h2>
+  <input id="resetName" type="text" placeholder="Enter username">
+  <button onclick="resetDevice()">Reset Device</button>
+</div>
+
+<div class="box">
+  <h2>Delete Student</h2>
+  <input id="deleteName" type="text" placeholder="Enter username">
+  <button onclick="deleteStudent()">delete student</button>
+</div>
+
+<script>
+// ----------------------
+// Supabase config
+// ----------------------
+const SUPABASE_URL = "https://hlstgluwamsuuqlctdzk.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhsc3RnbHV3YW1zdXVxbGN0ZHprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyNzMwMzQsImV4cCI6MjA3OTg0OTAzNH0.KUPx3pzrcd3H5aEx2B7mFosWNUVOEzXDD5gL-TmyawQ";
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// ----------------------
+// Add Student
+// ----------------------
+async function addStudent() {
+  let name = document.getElementById("addName").value.trim();
+
+  if (!name) {
+    alert("Enter a name.");
+    return;
+  }
+
+  const { error } = await sb
+    .from("students_devices")
+    .insert([{ username: name, device_id: null }]);
+
+  if (error) {
+    alert("Error adding: " + error.message);
+  } else {
+    alert("Student added: " + name);
+    document.getElementById("addName").value = "";
+  }
+}
+
+// ----------------------
+// Reset Device
+// ----------------------
+async function resetDevice() {
+  let name = document.getElementById("resetName").value.trim();
+
+  if (!name) {
+    alert("Enter a name.");
+    return;
+  }
+
+  const { error } = await sb
+    .from("students_devices")
+    .update({ device_id: null })
+    .eq("username", name);
+
+  if (error) {
+    alert("Error resetting: " + error.message);
+  } else {
+    alert("Device reset for: " + name);
+    document.getElementById("resetName").value = "";
+  }
+}
+
+// ----------------------
+// Delete Student
+// ----------------------
+async function deleteStudent() {
+  let name = document.getElementById("deleteName").value.trim();
+
+  if (!name) {
+    alert("Enter a name.");
+    return;
+  }
+
+  const { error } = await sb
+    .from("students_devices")
+    .delete()
+    .eq("username", name);
+
+  if (error) {
+    alert("Error deleting: " + error.message);
+  } else {
+    alert("Student deleted: " + name);
+    document.getElementById("deleteName").value = "";
+  }
+}
+</script>
+
+</body>
+</html>
