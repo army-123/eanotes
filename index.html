@@ -5,8 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>EA Notes Cloud — Liquid</title>
 
-<!-- Supabase client (loaded for script.js to use) -->
+<!-- Supabase client -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+<!-- ✅ REQUIRED FOR DEVICE LOCK (FingerprintJS) -->
+<script src="https://openfpcdn.io/fingerprintjs/v3"></script>
 
 <style>
   /* ---------- Liquid theme colors ---------- */
@@ -23,10 +26,8 @@
 
   html,body{ height:100%; margin:0; font-family:Inter,system-ui,Arial; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; background: linear-gradient(135deg,var(--bg-1),var(--bg-2)); color: #e9f6f5; }
 
-  /* center container */
   .wrap { min-height:100%; display:flex; align-items:center; justify-content:center; padding:28px; box-sizing:border-box; }
 
-  /* card */
   .card {
     width:980px; max-width:100%; background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
     border-radius: var(--card-radius); padding:20px; box-shadow: 0 10px 40px rgba(2,8,10,0.6);
@@ -38,10 +39,8 @@
   h1 { margin:0; font-size:20px; letter-spacing:0.2px; }
   .sub { color:var(--muted); font-size:13px; margin-top:4px; }
 
-  /* layout: login + dashboard stacked (we hide/show) */
   .section { margin-top:14px; }
 
-  /* login box */
   #loginBox { display:block; animation:fadeUp .35s ease both; }
   label { display:block; margin-top:12px; color:var(--muted); font-size:13px; }
   input[type="text"], input[type="password"] {
@@ -67,7 +66,6 @@
 
   .muted-small { color:var(--muted); font-size:13px; margin-top:10px; min-height:18px; }
 
-  /* Dashboard */
   #dashboard { display:none; animation:fadeUp .35s ease both; }
   .topbar { display:flex; justify-content:space-between; align-items:center; gap:12px; }
   .roleTag { padding:8px 10px; border-radius:999px; background: rgba(255,255,255,0.02); color:var(--muted); font-weight:700; }
@@ -75,7 +73,6 @@
 
   select { padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background: rgba(255,255,255,0.02); color:inherit; }
 
-  /* file list */
   .file-list { margin-top:14px; display:flex; flex-direction:column; gap:10px; }
   .file-row {
     display:flex; justify-content:space-between; align-items:center; gap:12px;
@@ -93,7 +90,6 @@
   .btn-view { background:transparent; color:var(--accent-2); border:1px solid rgba(255,255,255,0.03); padding:8px 10px; border-radius:8px; }
   .btn-delete { background:var(--danger); color:white; padding:8px 10px; border-radius:8px; border:0; }
 
-  /* upload placeholder row (uploading) */
   .uploading { opacity:0.95; }
 
   .progress {
@@ -101,43 +97,35 @@
   }
   .progress > b { display:block; height:100%; width:0%; background: linear-gradient(90deg,var(--accent-1),var(--accent-2)); transition: width .25s ease; }
 
-  /* modal / viewer */
   #pdfModal { display:none; position:fixed; inset:0; z-index:999; background:linear-gradient(rgba(2,6,8,0.6), rgba(2,6,8,0.85)); align-items:center; justify-content:center; }
-  /* SMALL CHANGE: make viewer take full screen for better reading (no other layout changes) */
   #pdfBox { width:100%; height:100%; background:white; border-radius:0; overflow:hidden; display:flex; flex-direction:column; }
 
   #pdfFrame { border:0; flex:1; width:100%; height:100%; }
 
-  /* small spinner for inline use */
   .spinner-inline{ display:inline-block; width:16px; height:16px; border-radius:50%; border:2px solid rgba(255,255,255,0.15); border-top-color:white; animation: spin .8s linear infinite; margin-left:8px; vertical-align:middle; }
   @keyframes spin{ to{ transform:rotate(360deg); } }
 
-  /* animations */
   @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
 
-  /* responsive */
   @media (max-width:940px){
     .card { padding:16px; width:100% }
     .controls{ flex-direction:column; align-items:stretch; }
   }
 </style>
 </head>
+
 <body>
   <div class="wrap">
     <div class="card">
 
-      <!-- header -->
       <div class="header">
         <div>
           <h1>EA Notes Cloud</h1>
           <div class="sub">Liquid theme — neat, smooth and fast</div>
         </div>
-        <div id="headerRight" style="display:flex;align-items:center;gap:8px">
-          <!-- will show roleText inside dashboard only -->
-        </div>
+        <div id="headerRight" style="display:flex;align-items:center;gap:8px"></div>
       </div>
 
-      <!-- LOGIN -->
       <div id="loginBox" class="section" aria-live="polite">
         <label for="loginName">Username / Email</label>
         <input id="loginName" type="text" autocomplete="off" placeholder="Student name or teacher email">
@@ -153,7 +141,6 @@
         <div id="loginFeedback" class="muted-small"></div>
       </div>
 
-      <!-- DASHBOARD (hidden until login) -->
       <div id="dashboard" class="section" aria-hidden="true">
         <div class="topbar">
           <div>
@@ -162,8 +149,12 @@
           </div>
 
           <div class="controls" id="controlsRow">
-            <select id="subjectSelect" aria-label="subject">
-              <option>Anatomy</option><option>History</option><option>Geography</option><option>Psychology</option><option>Mathematics</option>
+            <select id="subjectSelect">
+              <option>Anatomy</option>
+              <option>History</option>
+              <option>Geography</option>
+              <option>Psychology</option>
+              <option>Mathematics</option>
             </select>
 
             <button id="uploadBtn" class="btn btn-primary">Upload PDF</button>
@@ -173,16 +164,23 @@
           </div>
         </div>
 
-        <div class="file-list" id="fileList" aria-live="polite"></div>
+        <div class="file-list" id="fileList"></div>
       </div>
 
-    </div> <!-- card -->
-  </div> <!-- wrap -->
+    </div>
+  </div>
 
-  <!-- PDF modal -->
-  <div id="pdfModal"><div id="pdfBox"><div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #eee;"><div id="pdfTitle"></div><div><button id="closePdf" class="btn btn-primary" style="background:var(--accent-2);color:#04292b;">Close</button></div></div><iframe id="pdfFrame" allowfullscreen></iframe></div></div>
+  <div id="pdfModal">
+    <div id="pdfBox">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #eee;">
+        <div id="pdfTitle"></div>
+        <div><button id="closePdf" class="btn btn-primary" style="background:var(--accent-2);color:#04292b;">Close</button></div>
+      </div>
+      <iframe id="pdfFrame" allowfullscreen></iframe>
+    </div>
+  </div>
 
-  <!-- Logic (separate file recommended) -->
+  <!-- Runs after both Supabase & FingerprintJS loaded -->
   <script src="script.js"></script>
 </body>
 </html>
