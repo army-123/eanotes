@@ -164,7 +164,8 @@ async function loginHandler(){
     return;
   }
 
-  if (pw === '@armyamanu') {
+  /* ⭐⭐⭐ ONLY THIS LINE CHANGED ⭐⭐⭐ */
+  if (pw === '@student123') {
     const { data: studentRow, error: checkErr } = await sb
       .from("students_devices")
       .select("*")
